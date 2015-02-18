@@ -1,176 +1,5 @@
 #include "DNSResolver.h"
 
-DNSResolver::CreateClientSocket(void) {
-
-    //Create a socket for the client
-    clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
-
-    if(clientSocket < 0) {
-        throw SocketException("Unable to create client socket");
-    }
-
-    struct sockaddr_in clientAddress;
-    clientAddress.sin_family = AF_INET;
-    clientAddress.sin_port = htons(clientPort);
-
-    //inet_addr() converts a string-address into the proper type
-    //Specify the address for the socket
-    //Create the socket address structure and populate it's fields
-    struct sockaddr_in serveraddr;
-    serveraddr.sin_family = AF_INET;                            //Specify the family again (AF_INET = internet family)
-    serveraddr.sin_port = htons(lConfigManager.getResolverPort());                        //Specify the port on which to send data (16-bit) (# < 1024 is off-limits)
-    serveraddr.sin_addr.s_addr = lConfigManager.getResolverIPInetAddr();        //Specify the IP address of the server with which to communicate
-}
-
-int main(int argc, char * argv[]) {
-    DNSResolver resolver;
-
-    //Set the root servers for the resolver and
-    // intitialize the config parser
-    resolver.Initialize(argc, argv);
-
-    //Create the client socket
-    resolver.CreateClientSocket(void);
-
-    std::string domain;
-
-    while(1) {
-        //Wait for client to make a request and store it
-        DNSPacket request = resolver.GetClientRequest();
-
-        //@TODO CHECK CACHE
-        // if(cache.Exists(request)) {
-        //     resolver.SendClientResponse(request);
-        //     continue;
-        // }
-
-        //Response packet
-        DNSPacket response;
-
-        do {
-            //Create the server socket based on the configuration (starts at ROOT)
-            resolver.CreateServerSocket(void);
-            response = resolver.SendServerRequest(void);
-
-            //Answer received
-            if(response.GetAnswerCount()) {
-
-                //Loop through answers looking for Type A (IPv4)
-                for(int i = 0; i < response.GetAnswerCount(); i++) {
-                    if(response.GetAnswers().at(i).GetType() == TYPE_A) {
-                        //Forward packet to client
-                        resolver.SendClientReponse(response);
-                        break;
-                    }
-                }
-
-                //Loop through answers looking for CNAMEs
-                // for(int i = 0; i < response.GetAnswerCount(); i++) {
-                //     if(response.GetAnswers().at(i).GetType() == TYPE_CNAME) {
-                //         //Update the request to use the true name (CNAME)
-                //         //...
-                //
-                //         break;
-                //     }
-                // }
-            }
-
-            //No answer: send to the next server up
-            else {
-                //Send to a new server (name server/new root)
-                try {
-                    resolver.UpdateServer(response);
-                } catch(const Exception &e) {
-                    //Send response back to client
-                    resolver.SendClientResponse(response);
-                    break;
-                }
-            }
-
-        } while(!response.GetAnswerCount());
-    }
-}
-
-int main(int argc, char * argv[]) {
-    //Create a socket:
-    //socket() system call creates a socket, returning a socket descriptor
-    //  AF_INET specifies the address family for internet
-    //  SOCK_DGRAM says we want UDP as our transport layer
-    //  0 is a parameter used for some options for certain types of sockets, unused for INET sockets
-    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    //Create timeval struct with 2s timeout.
-    struct timeval to;
-    to.tv_sec = 2;
-    to.tv_usec = 0;
-
-    //Make socket timeout after certain time with no data w/ setsockopt
-    //  socket descriptor
-    //  socket level (internet sockets, local sockets, etc.)
-    //  option we want (SO_RCVTIMEO = Receive timeout)
-    //  timeout structure
-    //  size of structure
-    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
-
-    if(sockfd < 0) {
-        std::cerr << "Could not open socket\n";
-        return -1;
-    }
-
-    //inet_addr() converts a string-address into the proper type
-    //Specify the address for the socket
-    //Create the socket address structure and populate it's fields
-    struct sockaddr_in serveraddr;
-    serveraddr.sin_family = AF_INET;                            //Specify the family again (AF_INET = internet family)
-    serveraddr.sin_port = htons(lConfigManager.getResolverPort());                        //Specify the port on which to send data (16-bit) (# < 1024 is off-limits)
-    serveraddr.sin_addr.s_addr = lConfigManager.getResolverIPInetAddr();        //Specify the IP address of the server with which to communicate
-
-    char * response = (char*)malloc(MAX_INPUT_SIZE);
-
-    std::string domain;
-    while(1) {
-        memset(response, 0, MAX_INPUT_SIZE);
-        domain.clear();
-        //Get domain from user
-        std::cout << "Enter a domain name: ";
-        std::cin >> domain;
-
-        resolver.SetDomain(domain);
-
-        //Create a request DNS packets
-        DNSPacket requestPacket(domain);
-
-        std::cout << "REQUEST PACKET" << std::endl;
-        requestPacket.Print();
-
-        //Send packet to server
-        char *packetData = requestPacket.GetData();
-        if(-1 == sendto(sockfd, packetData, requestPacket.Size(), 0, (struct sockaddr *)&serveraddr, sizeof(serveraddr))) {
-            perror(strerror(errno));
-            return 0;
-        }
-
-        unsigned int len = sizeof(serveraddr);
-        int n = recvfrom(sockfd, response, MAX_INPUT_SIZE, 0, (struct sockaddr *)&serveraddr, &len);
-
-        if(n <= 0) {
-            std::cerr << "Error receiving packet: recvfrom(): " << strerror(errno) << std::endl;
-        }
-        else
-        {
-            //Create a packet for the response packet
-            DNSPacket responsePacket(response, n);
-
-            //Print response
-            std::cout << "\nRESPONSE PACKET" << std::endl;
-            responsePacket.Print();
-        }
-    }
-
-    //Close
-    free(response);
-}
-
 void DNSResolver::Initialize(int argc, char ** argv) {
     //Create root server address array
     rootServers.push_back("198.41.0.4");            //A.ROOT-SERVERS.NET
@@ -197,4 +26,229 @@ void DNSResolver::Initialize(int argc, char ** argv) {
     }
 
     clientPort = configManager.getClientPort();
+}
+
+void DNSResolver::CreateClientSocket(void) {
+
+    //Create a socket for the client
+    clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    //5 second timeout
+    struct timeval to;
+    to.tv_sec = 5;
+    to.tv_usec = 0;
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
+
+    if(clientSocket < 0) {
+        throw SocketException("Unable to create client socket");
+    }
+
+    clientAddress.sin_family = AF_INET;
+    clientAddress.sin_port = htons(clientPort);
+    clientAddress.sin_addr.s_addr = INADDR_ANY;
+
+    bind(clientSocket, (struct sockaddr *) &clientAddress, sizeof(clientAddress));
+}
+
+DNSPacket DNSResolver::GetClientRequest(void) {
+    unsigned int addressLength = sizeof(clientAddress);
+
+    char data[MAX_DNS_LEN];
+    memset(&data, 0, MAX_DNS_LEN);
+
+    int bytesReceived = recvfrom(clientSocket, data, MAX_DNS_LEN, 0, (struct sockaddr *)&clientAddress, &addressLength);
+
+    if(bytesReceived < 0) {
+        throw SocketException("Error receiving bytes from client: recvfrom()");
+    }
+
+    DNSPacket request(data, bytesReceived);
+
+    return request;
+}
+
+void DNSResolver::CreateServerSocket(void) {
+
+    //Create a socket for the server
+    int serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    //5 second timeout
+    struct timeval to;
+    to.tv_sec = 5;
+    to.tv_usec = 0;
+    setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
+
+    if(serverSocket < 0) {
+        throw SocketException("Unable to create client socket");
+    }
+
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(serverPort);
+    serverAddress.sin_addr.s_addr = inet_addr(serverIP.c_str());
+}
+
+DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
+    char * requestData = request.GetData();
+
+    int bytesSent = 0;
+
+    bytesSent = sendto(serverSocket, requestData, request.Size(), 0, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
+
+    if(bytesSent < 0) {
+        throw SocketException("Error sending bytes to server: sendto()");
+    }
+
+    char responseData[MAX_DNS_LEN];
+    memset(&responseData, 0, MAX_DNS_LEN);
+
+    unsigned int addressLength = sizeof(serverAddress);
+    int bytesReceived = recvfrom(clientSocket, responseData, MAX_DNS_LEN, 0, (struct sockaddr *)&serverAddress, &addressLength);
+
+    if(bytesReceived < 0) {
+        throw SocketException("Error receiving bytes from server: recvfrom()");
+    }
+
+    DNSPacket response(responseData, bytesReceived);
+
+    return response;
+}
+
+void DNSResolver::SendClientReponse(DNSPacket & response) {
+    char * responseData = response.GetData();
+
+    int bytesSent = 0;
+
+    bytesSent = sendto(clientSocket, responseData, response.Size(), 0, (struct sockaddr *)&clientAddress, sizeof(clientAddress));
+
+    if(bytesSent < 0) {
+        throw SocketException("Error sending bytes to client: sendto()");
+    }
+}
+
+void DNSResolver::UpdateServer(DNSPacket & response) {
+    static unsigned int rootServerIndex = 0;
+
+    //Check for name servers
+    if(response.GetNameServerCount()) {
+        std::string nameServer;
+        std::string address;
+
+        for(int i = 0; i < response.GetNameServerCount(); i++ ) {
+            nameServer = response.GetNameServerSection().at(i).GetRecordData();
+
+            //Look up the IP of the name server in the additional records
+            for(int j = 0; j < response.GetAdditionalRecordCount(); j++) {
+                if(nameServer == response.GetAdditionalSection().at(j).GetRawName()) {
+                    address = response.GetAdditionalSection().at(j).GetRecordData();
+                    std::cout << "Found name server address: " << address << std::endl;
+                    break;
+                } else {
+                    address.clear();
+                }
+            }
+
+            if(!address.empty()) {
+                serverIP = address;
+                break;
+            }
+        }
+
+        if(address.empty()) {
+            std::cout << "Could not find address for any name server" << std::endl;
+            throw GeneralException("Dead end: Could not resolve IP addresses for name servers: DNS Lookup failed");
+        }
+
+    } else {
+        if(rootServerIndex >= rootServers.size()) {
+            throw GeneralException("Root servers exhausted: DNS Lookup failed");
+        }
+
+        serverIP = rootServers.at(rootServerIndex);
+    }
+}
+
+int main(int argc, char * argv[]) {
+    DNSResolver resolver;
+
+    //Set the root servers for the resolver and
+    // intitialize the config parser
+    resolver.Initialize(argc, argv);
+
+    //Create the client socket
+    resolver.CreateClientSocket();
+
+    while(1) {
+        DNSPacket request((std::string()));
+
+        try {
+            //Wait for client to make a request and store it
+            request = resolver.GetClientRequest();
+        } catch(const Exception & e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+            continue;
+        }
+
+
+        //DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
+        //std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
+        //std::string & cache.GetAlias(string)    //ex: www.facebook.com --> ns1.cr0.facebook.com
+        //void cache.AddPacket(string key, DNSPacket &)
+        //void cache.AddAddress(key string, value string, uint32_t ttl);
+        //void cache.AddAlias(key string, value string, uint32_t ttl);
+
+        //@TODO CHECK CACHE
+        // if(cache.PacketExists(request) != NULL) {
+        //     resolver.SendClientResponse(request);
+        //     continue;
+        // } // ... same for address and alias
+
+        //Response packet
+        DNSPacket response((std::string()));
+
+        do {
+            //Create the server socket based on the configuration (starts at ROOT)
+            resolver.CreateServerSocket();
+            response = resolver.SendServerRequest(request);
+
+            //Answer received
+            if(response.GetAnswerCount()) {
+
+                //Loop through answers looking for Type A (IPv4)
+                for(int i = 0; i < response.GetAnswerCount(); i++) {
+                    if(response.GetAnswerSection().at(i).GetType() == TYPE_A) {
+                        //@TODO Add to cache
+
+                        //Forward packet to client
+                        resolver.SendClientReponse(response);
+                        break;
+                    }
+                }
+
+                //Loop through answers looking for CNAMEs
+                // for(int i = 0; i < response.GetAnswerCount(); i++) {
+                //     if(response.GetAnswerSection().at(i).GetType() == TYPE_CNAME) {
+                //         //Update the request to use the true name (CNAME)
+                //         //...
+                //         //@TODO Add to cache
+                //         break;
+                //     }
+                // }
+            }
+
+            //No answer: send to the next server up
+            else {
+                //Send to a new server (name server/new root)
+                try {
+                    //@TODO Add to cache
+                    resolver.UpdateServer(response);
+                } catch(const Exception &e) {
+                    //Send response back to client
+                    std::cerr << e.what() << std::endl;
+                    resolver.SendClientResponse(response);
+                    break;
+                }
+            }
+
+        } while(!response.GetAnswerCount());
+    }
 }

@@ -13,6 +13,7 @@
 #include "ConfigManager.hpp"
 #include "Exception.h"
 
+#define MAX_DNS_LEN     (1024 * 64)
 #define MAX_INPUT_SIZE  512
 #define DNS_PORT        53
 
@@ -26,6 +27,13 @@ public:
     }
 
     void Initialize(int, char **);
+    void CreateClientSocket(void);
+    DNSPacket GetClientRequest(void);
+    void CreateServerSocket(void);
+    DNSPacket SendServerRequest(DNSPacket & request);
+    void SendClientReponse(DNSPacket & response);
+    void UpdateServer(DNSPacket & response);
+
 
     std::string & GetDomain(void) { return domain; }
     void SetDomain(const std::string & domain) { this->domain = domain; }
@@ -36,7 +44,7 @@ public:
         return (index >= rootServers.size() ? rootServers.at(0) : rootServers.at(index));
     }
 
-    void PrintClientInfo(Void) {
+    void PrintClientInfo(void) {
         std::cout << "Client Info:" << std::endl;
         //std::cout << " --> IP: " << serverIP << std::endl;
         std::cout << " --> Port: " << serverPort << std::endl;
@@ -56,6 +64,14 @@ private:
     unsigned clientPort;                    //Client port
     unsigned serverPort = DNS_PORT;         //Port 53
     std::string serverIP;                   //Server IP
+
+    //Client socket/address
+    int clientSocket;
+    struct sockaddr_in clientAddress;
+
+    //Server socket address
+    int serverSocket;
+    struct sockaddr_in serverAddress;
 };
 
 #endif//DNSRESOLVER_H

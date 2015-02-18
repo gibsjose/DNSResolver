@@ -44,6 +44,26 @@ private:
     std::string message;
 };
 
+class SocketException : public Exception {
+public:
+    SocketException(const std::string & message) : Exception() {
+        this->message = message;
+    }
+
+    ~SocketException() throw() {}
+
+    const char * what() const throw() {
+        std::string tmp;
+
+        tmp = "---> SocketException: " + message;
+
+        return tmp.c_str();
+    }
+
+private:
+    std::string message;
+};
+
 
 class FileIOException : public Exception {
 public:
