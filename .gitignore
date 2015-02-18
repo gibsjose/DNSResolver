@@ -5,7 +5,7 @@
 *.dSYM
 
 #Actual binary
-#DNSResolver
+DNSResolver
 
 #Object files
 *.o
