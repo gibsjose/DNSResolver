@@ -1,5 +1,27 @@
 #include "DNSResolver.h"
 
+DNSResolver::CreateClientSocket(void) {
+
+    //Create a socket for the client
+    clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if(clientSocket < 0) {
+        throw SocketException("Unable to create client socket");
+    }
+
+    struct sockaddr_in clientAddress;
+    clientAddress.sin_family = AF_INET;
+    clientAddress.sin_port = htons(clientPort);
+
+    //inet_addr() converts a string-address into the proper type
+    //Specify the address for the socket
+    //Create the socket address structure and populate it's fields
+    struct sockaddr_in serveraddr;
+    serveraddr.sin_family = AF_INET;                            //Specify the family again (AF_INET = internet family)
+    serveraddr.sin_port = htons(lConfigManager.getResolverPort());                        //Specify the port on which to send data (16-bit) (# < 1024 is off-limits)
+    serveraddr.sin_addr.s_addr = lConfigManager.getResolverIPInetAddr();        //Specify the IP address of the server with which to communicate
+}
+
 int main(int argc, char * argv[]) {
     DNSResolver resolver;
 
@@ -10,46 +32,62 @@ int main(int argc, char * argv[]) {
     //Create the client socket
     resolver.CreateClientSocket(void);
 
-    //Wait for client to make a request and store it
-    DNSPacket request = resolver.GetClientRequest(void);
-
-    DNSPacket response;
+    std::string domain;
 
     while(1) {
-        resolver.CreateServerSocket(void);
-        response = resolver.SendRequest(void);
+        //Wait for client to make a request and store it
+        DNSPacket request = resolver.GetClientRequest();
 
-        //Answer received
-        if(response.GetAnswerCount()) {
+        //@TODO CHECK CACHE
+        // if(cache.Exists(request)) {
+        //     resolver.SendClientResponse(request);
+        //     continue;
+        // }
 
-            //Loop through answers looking for Type A (IPv4)
-            for(int i = 0; i < response.GetAnswerCount(); i++) {
-                if(response.GetAnswers().at(i).GetType() == TYPE_A) {
-                    //Forward packet to client
-                    resolver.SendClient(response);
+        //Response packet
+        DNSPacket response;
+
+        do {
+            //Create the server socket based on the configuration (starts at ROOT)
+            resolver.CreateServerSocket(void);
+            response = resolver.SendServerRequest(void);
+
+            //Answer received
+            if(response.GetAnswerCount()) {
+
+                //Loop through answers looking for Type A (IPv4)
+                for(int i = 0; i < response.GetAnswerCount(); i++) {
+                    if(response.GetAnswers().at(i).GetType() == TYPE_A) {
+                        //Forward packet to client
+                        resolver.SendClientReponse(response);
+                        break;
+                    }
+                }
+
+                //Loop through answers looking for CNAMEs
+                // for(int i = 0; i < response.GetAnswerCount(); i++) {
+                //     if(response.GetAnswers().at(i).GetType() == TYPE_CNAME) {
+                //         //Update the request to use the true name (CNAME)
+                //         //...
+                //
+                //         break;
+                //     }
+                // }
+            }
+
+            //No answer: send to the next server up
+            else {
+                //Send to a new server (name server/new root)
+                try {
+                    resolver.UpdateServer(response);
+                } catch(const Exception &e) {
+                    //Send response back to client
+                    resolver.SendClientResponse(response);
                     break;
                 }
             }
 
-            //Loop through answers looking for CNAMEs
-            // for(int i = 0; i < response.GetAnswerCount(); i++) {
-            //     if(response.GetAnswers().at(i).GetType() == TYPE_CNAME) {
-            //         //Update the request to use the true name (CNAME)
-            //         //...
-            //
-            //         break;
-            //     }
-            // }
-        }
-
-        //No answer, check for name servers/additional records
-        else {
-            //Get the name server
-
-
-            //Send to a new server (name server)
-            resolver.UpdateServer(response);
-        }
+        } while(!response.GetAnswerCount());
     }
 }
 
@@ -86,17 +124,6 @@ int main(int argc, char * argv[]) {
     serveraddr.sin_family = AF_INET;                            //Specify the family again (AF_INET = internet family)
     serveraddr.sin_port = htons(lConfigManager.getResolverPort());                        //Specify the port on which to send data (16-bit) (# < 1024 is off-limits)
     serveraddr.sin_addr.s_addr = lConfigManager.getResolverIPInetAddr();        //Specify the IP address of the server with which to communicate
-
-    fd_set sockets;
-
-    // Clear the fd set
-    FD_ZERO(&sockets);
-
-    //Add server socket to the file descriptor set
-    FD_SET(sockfd, &sockets);
-    //FD_SET(STDIN_FILENO, &sockets);
-
-    std::cout << std::endl;
 
     char * response = (char*)malloc(MAX_INPUT_SIZE);
 
@@ -169,6 +196,5 @@ void DNSResolver::Initialize(int argc, char ** argv) {
         return -1;
     }
 
-    serverPort = configManager.getResolverPort();
-    serverIP = configManager.getResolverIPString();
+    clientPort = configManager.getClientPort();
 }

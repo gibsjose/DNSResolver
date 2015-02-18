@@ -2,7 +2,7 @@
 
 ConfigManager::ConfigManager()
 {
-    mResolverPort = -1;
+    mClientPort = -1;
     mResolverIP.clear();
 }
 
@@ -26,7 +26,7 @@ void ConfigManager::parseArgs(int aArgc, char * aArgv[])
 
       if(!strcmp("-p", lArgFlag))
       {
-        mResolverPort = atoi(lArgValue);
+        mClientPort = atoi(lArgValue);
       }
       else if(!strcmp("-ip", lArgFlag))
       {
@@ -41,15 +41,15 @@ void ConfigManager::parseArgs(int aArgc, char * aArgv[])
         parseResolver(mResolverIP);
     }
 
-    if(mResolverPort == -1)
+    if(mClientPort == -1)
     {
-        mResolverPort = 53;
+        mClientPort = 53;
     }
 }
 
-int ConfigManager::getResolverPort() const
+int ConfigManager::getClientPort() const
 {
-    return mResolverPort;
+    return mClientPort;
 }
 
 const std::string & ConfigManager::getResolverIPString() const

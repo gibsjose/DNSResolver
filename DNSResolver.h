@@ -13,7 +13,8 @@
 #include "ConfigManager.hpp"
 #include "Exception.h"
 
-#define MAX_INPUT_SIZE 512
+#define MAX_INPUT_SIZE  512
+#define DNS_PORT        53
 
 typedef std::vector<std::string> RootServers_t;
 
@@ -35,6 +36,12 @@ public:
         return (index >= rootServers.size() ? rootServers.at(0) : rootServers.at(index));
     }
 
+    void PrintClientInfo(Void) {
+        std::cout << "Client Info:" << std::endl;
+        //std::cout << " --> IP: " << serverIP << std::endl;
+        std::cout << " --> Port: " << serverPort << std::endl;
+    }
+
     void PrintServerInfo(void) {
         std::cout << "Server Info:" << std::endl;
         std::cout << " --> IP: " << serverIP << std::endl;
@@ -45,9 +52,10 @@ private:
     ConfigManager configManager;
     RootServers_t rootServers;
     std::string domain;
-    
-    unsigned serverPort;
-    std::string serverIP;
+
+    unsigned clientPort;                    //Client port
+    unsigned serverPort = DNS_PORT;         //Port 53
+    std::string serverIP;                   //Server IP
 };
 
 #endif//DNSRESOLVER_H
