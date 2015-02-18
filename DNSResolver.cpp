@@ -1,18 +1,4 @@
-#include <iostream>
-#include <sys/socket.h> //Socket features
-#include <netinet/in.h> //Internet-specific features of sockets
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string.h>
-
-#include "DNSPacket.h"
-#include "ConfigManager.hpp"
-#include "Exception.h"
-
-
-#define MAX_INPUT_SIZE 512
-
-void ntrim(char *str);
+#include "DNSResolver.h"
 
 int main(int argc, char * argv[]) {
     //Initialization
@@ -135,14 +121,4 @@ int main(int argc, char * argv[]) {
 
     //Close
     free(response);
-}
-
-//Trim the first newline character from the string
-void ntrim(char *str) {
-    for(int i = 0; i < strlen(str); i++) {
-        if(str[i] == '\n') {
-            str[i] = '\0';
-            break;
-        }
-    }
 }
