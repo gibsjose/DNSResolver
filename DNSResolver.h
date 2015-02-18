@@ -31,7 +31,7 @@ public:
     DNSPacket GetClientRequest(void);
     void CreateServerSocket(void);
     DNSPacket SendServerRequest(DNSPacket & request);
-    void SendClientReponse(DNSPacket & response);
+    void SendClientResponse(DNSPacket & response);
     void UpdateServer(DNSPacket & response);
 
 
