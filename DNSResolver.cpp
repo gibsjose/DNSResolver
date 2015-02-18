@@ -1,5 +1,91 @@
 #include "DNSResolver.h"
 
+int main(int argc, char * argv[]) {
+    DNSResolver resolver;
+
+    //Set the root servers for the resolver and
+    // intitialize the config parser
+    resolver.Initialize(argc, argv);
+
+    //Create the client socket
+    resolver.CreateClientSocket();
+
+    while(1) {
+        DNSPacket request((std::string()));
+
+        try {
+            //Wait for client to make a request and store it
+            request = resolver.GetClientRequest();
+        } catch(const Exception & e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+            continue;
+        }
+
+
+        //DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
+        //std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
+        //std::string & cache.GetAlias(string)    //ex: www.facebook.com --> ns1.cr0.facebook.com
+        //void cache.AddPacket(string key, DNSPacket &)
+        //void cache.AddAddress(key string, value string, uint32_t ttl);
+        //void cache.AddAlias(key string, value string, uint32_t ttl);
+
+        //@TODO CHECK CACHE
+        // if(cache.PacketExists(request) != NULL) {
+        //     resolver.SendClientResponse(request);
+        //     continue;
+        // } // ... same for address and alias
+
+        //Response packet
+        DNSPacket response((std::string()));
+
+        do {
+            //Create the server socket based on the configuration (starts at ROOT)
+            resolver.CreateServerSocket();
+            response = resolver.SendServerRequest(request);
+
+            //Answer received
+            if(response.GetAnswerCount()) {
+
+                //Loop through answers looking for Type A (IPv4)
+                for(int i = 0; i < response.GetAnswerCount(); i++) {
+                    if(response.GetAnswerSection().at(i).GetType() == TYPE_A) {
+                        //@TODO Add to cache
+
+                        //Forward packet to client
+                        resolver.SendClientResponse(response);
+                        break;
+                    }
+                }
+
+                //Loop through answers looking for CNAMEs
+                // for(int i = 0; i < response.GetAnswerCount(); i++) {
+                //     if(response.GetAnswerSection().at(i).GetType() == TYPE_CNAME) {
+                //         //Update the request to use the true name (CNAME)
+                //         //...
+                //         //@TODO Add to cache
+                //         break;
+                //     }
+                // }
+            }
+
+            //No answer: send to the next server up
+            else {
+                //Send to a new server (name server/new root)
+                try {
+                    //@TODO Add to cache
+                    resolver.UpdateServer(response);
+                } catch(const Exception &e) {
+                    //Send response back to client
+                    std::cerr << e.what() << std::endl;
+                    resolver.SendClientResponse(response);
+                    break;
+                }
+            }
+
+        } while(!response.GetAnswerCount());
+    }
+}
+
 void DNSResolver::Initialize(int argc, char ** argv) {
     //Create root server address array
     rootServers.push_back("198.41.0.4");            //A.ROOT-SERVERS.NET
@@ -22,7 +108,7 @@ void DNSResolver::Initialize(int argc, char ** argv) {
     }
     catch(Exception & e) {
         std::cerr << "Error: ConfigManager::parseArgs(): " << e.what() << "\n";
-        return -1;
+        exit(-1);
     }
 
     clientPort = configManager.getClientPort();
@@ -113,7 +199,7 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
     return response;
 }
 
-void DNSResolver::SendClientReponse(DNSPacket & response) {
+void DNSResolver::SendClientResponse(DNSPacket & response) {
     char * responseData = response.GetData();
 
     int bytesSent = 0;
@@ -164,91 +250,5 @@ void DNSResolver::UpdateServer(DNSPacket & response) {
         }
 
         serverIP = rootServers.at(rootServerIndex);
-    }
-}
-
-int main(int argc, char * argv[]) {
-    DNSResolver resolver;
-
-    //Set the root servers for the resolver and
-    // intitialize the config parser
-    resolver.Initialize(argc, argv);
-
-    //Create the client socket
-    resolver.CreateClientSocket();
-
-    while(1) {
-        DNSPacket request((std::string()));
-
-        try {
-            //Wait for client to make a request and store it
-            request = resolver.GetClientRequest();
-        } catch(const Exception & e) {
-            std::cerr << "Error: " << e.what() << std::endl;
-            continue;
-        }
-
-
-        //DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
-        //std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
-        //std::string & cache.GetAlias(string)    //ex: www.facebook.com --> ns1.cr0.facebook.com
-        //void cache.AddPacket(string key, DNSPacket &)
-        //void cache.AddAddress(key string, value string, uint32_t ttl);
-        //void cache.AddAlias(key string, value string, uint32_t ttl);
-
-        //@TODO CHECK CACHE
-        // if(cache.PacketExists(request) != NULL) {
-        //     resolver.SendClientResponse(request);
-        //     continue;
-        // } // ... same for address and alias
-
-        //Response packet
-        DNSPacket response((std::string()));
-
-        do {
-            //Create the server socket based on the configuration (starts at ROOT)
-            resolver.CreateServerSocket();
-            response = resolver.SendServerRequest(request);
-
-            //Answer received
-            if(response.GetAnswerCount()) {
-
-                //Loop through answers looking for Type A (IPv4)
-                for(int i = 0; i < response.GetAnswerCount(); i++) {
-                    if(response.GetAnswerSection().at(i).GetType() == TYPE_A) {
-                        //@TODO Add to cache
-
-                        //Forward packet to client
-                        resolver.SendClientReponse(response);
-                        break;
-                    }
-                }
-
-                //Loop through answers looking for CNAMEs
-                // for(int i = 0; i < response.GetAnswerCount(); i++) {
-                //     if(response.GetAnswerSection().at(i).GetType() == TYPE_CNAME) {
-                //         //Update the request to use the true name (CNAME)
-                //         //...
-                //         //@TODO Add to cache
-                //         break;
-                //     }
-                // }
-            }
-
-            //No answer: send to the next server up
-            else {
-                //Send to a new server (name server/new root)
-                try {
-                    //@TODO Add to cache
-                    resolver.UpdateServer(response);
-                } catch(const Exception &e) {
-                    //Send response back to client
-                    std::cerr << e.what() << std::endl;
-                    resolver.SendClientResponse(response);
-                    break;
-                }
-            }
-
-        } while(!response.GetAnswerCount());
     }
 }
