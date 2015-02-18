@@ -21,18 +21,23 @@ class DNSResolver {
 public:
     DNSResolver(void) {
         rootServers.clear();
+        domain.clear();
     }
 
     void Initialize(void);
 
+    std::string & GetDomain(void) { return domain; }
+    void SetDomain(const std::string & domain) { this->domain = domain; }
+
     RootServers_t & GetRootServers(void) { return rootServers; }
-    
+
     std::string & GetRootServer(unsigned int index) {
         return (index >= rootServers.size() ? rootServers.at(0) : rootServers.at(index));
     }
 
 private:
     RootServers_t rootServers;
+    std::string domain;
 };
 
 #endif//DNSRESOLVER_H
