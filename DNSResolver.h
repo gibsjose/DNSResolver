@@ -15,17 +15,29 @@
 
 #define MAX_INPUT_SIZE 512
 
-typedef std::map<std::string, std::string> RootServerMap_t;
+typedef std::vector<std::string> RootServers_t;
 
 class DNSResolver {
 public:
     DNSResolver(void) {
         rootServers.clear();
+        domain.clear();
     }
 
-    RootServerMap_t & GetRootServers(void) { return rootServers; }
+    void Initialize(void);
+
+    std::string & GetDomain(void) { return domain; }
+    void SetDomain(const std::string & domain) { this->domain = domain; }
+
+    RootServers_t & GetRootServers(void) { return rootServers; }
+
+    std::string & GetRootServer(unsigned int index) {
+        return (index >= rootServers.size() ? rootServers.at(0) : rootServers.at(index));
+    }
+
 private:
-    RootServerMap_t rootServers;
+    RootServers_t rootServers;
+    std::string domain;
 };
 
 #endif//DNSRESOLVER_H

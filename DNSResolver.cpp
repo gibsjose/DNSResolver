@@ -1,6 +1,11 @@
 #include "DNSResolver.h"
 
 int main(int argc, char * argv[]) {
+
+    DNSResolver resolver;
+
+    resolver.Initialize();
+
     //Initialization
     ConfigManager lConfigManager;
     try
@@ -53,10 +58,6 @@ int main(int argc, char * argv[]) {
         return -1;
     }
 
-    // std::cout << "===========================================\n";
-    // std::cout << "Connecting to " << address << ":" << port <<std::endl;
-    // std::cout << "===========================================\n" << std::endl;
-
     //inet_addr() converts a string-address into the proper type
     //Specify the address for the socket
     //Create the socket address structure and populate it's fields
@@ -64,9 +65,6 @@ int main(int argc, char * argv[]) {
     serveraddr.sin_family = AF_INET;                            //Specify the family again (AF_INET = internet family)
     serveraddr.sin_port = htons(lConfigManager.getResolverPort());                        //Specify the port on which to send data (16-bit) (# < 1024 is off-limits)
     serveraddr.sin_addr.s_addr = lConfigManager.getResolverIPInetAddr();        //Specify the IP address of the server with which to communicate
-
-    //"Connect" to the server by sending it 'STX' and expect an 'ACK' back.
-
 
     fd_set sockets;
 
@@ -88,6 +86,8 @@ int main(int argc, char * argv[]) {
         //Get domain from user
         std::cout << "Enter a domain name: ";
         std::cin >> domain;
+
+        resolver.SetDomain(domain);
 
         //Create a request DNS packets
         DNSPacket requestPacket(domain);
@@ -121,4 +121,20 @@ int main(int argc, char * argv[]) {
 
     //Close
     free(response);
+}
+
+void DNSResolver::Initialize(void) {
+    rootServers.push_back("198.41.0.4");            //A.ROOT-SERVERS.NET
+    rootServers.push_back("192.228.79.201");        //B.ROOT-SERVERS.NET
+    rootServers.push_back("192.33.4.12");           //C.ROOT-SERVERS.NET
+    rootServers.push_back("199.7.91.13");           //D.ROOT-SERVERS.NET
+    rootServers.push_back("192.203.230.10");        //E.ROOT-SERVERS.NET
+    rootServers.push_back("192.5.5.241");           //F.ROOT-SERVERS.NET
+    rootServers.push_back("192.112.36.4");          //G.ROOT-SERVERS.NET
+    rootServers.push_back("128.63.2.53");           //H.ROOT-SERVERS.NET
+    rootServers.push_back("192.36.148.17");         //I.ROOT-SERVERS.NET
+    rootServers.push_back("192.58.128.30");         //J.ROOT-SERVERS.NET
+    rootServers.push_back("193.0.14.129");          //K.ROOT-SERVERS.NET
+    rootServers.push_back("199.7.83.42");           //L.ROOT-SERVERS.NET
+    rootServers.push_back("202.12.27.33");          //M.ROOT-SERVERS.NET
 }
