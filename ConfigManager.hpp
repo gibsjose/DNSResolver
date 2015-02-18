@@ -18,13 +18,13 @@ public:
     ConfigManager();
     ~ConfigManager();
     void parseArgs(int argc, char * argv[]);
-    int getResolverPort() const;
+    int getClientPort() const;
     const std::string & getResolverIPString() const;
     in_addr_t getResolverIPInetAddr() const;
 
 private:
     std::string mResolverIP;
-    unsigned mResolverPort;
+    unsigned mClientPort;
 
     void parseResolver(std::string & aResolverIP);
 };
