@@ -24,7 +24,7 @@ public:
         domain.clear();
     }
 
-    void Initialize(void);
+    void Initialize(int, char **);
 
     std::string & GetDomain(void) { return domain; }
     void SetDomain(const std::string & domain) { this->domain = domain; }
@@ -35,9 +35,19 @@ public:
         return (index >= rootServers.size() ? rootServers.at(0) : rootServers.at(index));
     }
 
+    void PrintServerInfo(void) {
+        std::cout << "Server Info:" << std::endl;
+        std::cout << " --> IP: " << serverIP << std::endl;
+        std::cout << " --> Port: " << serverPort << std::endl;
+    }
+
 private:
+    ConfigManager configManager;
     RootServers_t rootServers;
     std::string domain;
+    
+    unsigned serverPort;
+    std::string serverIP;
 };
 
 #endif//DNSRESOLVER_H

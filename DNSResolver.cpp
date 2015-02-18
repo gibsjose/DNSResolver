@@ -1,38 +1,59 @@
 #include "DNSResolver.h"
 
 int main(int argc, char * argv[]) {
-
     DNSResolver resolver;
 
-    resolver.Initialize();
+    //Set the root servers for the resolver and
+    // intitialize the config parser
+    resolver.Initialize(argc, argv);
 
-    //Initialization
-    ConfigManager lConfigManager;
-    try
-    {
-        lConfigManager.parseArgs(argc, argv);
-    }
-    catch(ParseException & e)
-    {
-        std::cerr << "Error: " << e.what() << "\n";
-        return -2;
-    }
-    catch(FileIOException & e)
-    {
-        std::cerr << "Error: " << e.what() << "\n";
-        return -3;
-    }
-    catch(...)
-    {
-        std::cerr << "Error: unhandled exception.\n";
-        return -1;
-    }
+    //Create the client socket
+    resolver.CreateClientSocket(void);
 
-    std::cout << "Resolver info:" << std::endl;
-    std::cout << " --> IP: " << lConfigManager.getResolverIPString() << std::endl;
-    std::cout << " --> Port: " << lConfigManager.getResolverPort() << std::endl;
+    //Wait for client to make a request and store it
+    DNSPacket request = resolver.GetClientRequest(void);
+
+    DNSPacket response;
+
+    while(1) {
+        resolver.CreateServerSocket(void);
+        response = resolver.SendRequest(void);
+
+        //Answer received
+        if(response.GetAnswerCount()) {
+
+            //Loop through answers looking for Type A (IPv4)
+            for(int i = 0; i < response.GetAnswerCount(); i++) {
+                if(response.GetAnswers().at(i).GetType() == TYPE_A) {
+                    //Forward packet to client
+                    resolver.SendClient(response);
+                    break;
+                }
+            }
+
+            //Loop through answers looking for CNAMEs
+            // for(int i = 0; i < response.GetAnswerCount(); i++) {
+            //     if(response.GetAnswers().at(i).GetType() == TYPE_CNAME) {
+            //         //Update the request to use the true name (CNAME)
+            //         //...
+            //
+            //         break;
+            //     }
+            // }
+        }
+
+        //No answer, check for name servers/additional records
+        else {
+            //Get the name server
 
 
+            //Send to a new server (name server)
+            resolver.UpdateServer(response);
+        }
+    }
+}
+
+int main(int argc, char * argv[]) {
     //Create a socket:
     //socket() system call creates a socket, returning a socket descriptor
     //  AF_INET specifies the address family for internet
@@ -123,7 +144,8 @@ int main(int argc, char * argv[]) {
     free(response);
 }
 
-void DNSResolver::Initialize(void) {
+void DNSResolver::Initialize(int argc, char ** argv) {
+    //Create root server address array
     rootServers.push_back("198.41.0.4");            //A.ROOT-SERVERS.NET
     rootServers.push_back("192.228.79.201");        //B.ROOT-SERVERS.NET
     rootServers.push_back("192.33.4.12");           //C.ROOT-SERVERS.NET
@@ -137,4 +159,16 @@ void DNSResolver::Initialize(void) {
     rootServers.push_back("193.0.14.129");          //K.ROOT-SERVERS.NET
     rootServers.push_back("199.7.83.42");           //L.ROOT-SERVERS.NET
     rootServers.push_back("202.12.27.33");          //M.ROOT-SERVERS.NET
+
+    //Config manager: parse arguments
+    try {
+        configManager.parseArgs(argc, argv);
+    }
+    catch(Exception & e) {
+        std::cerr << "Error: ConfigManager::parseArgs(): " << e.what() << "\n";
+        return -1;
+    }
+
+    serverPort = configManager.getResolverPort();
+    serverIP = configManager.getResolverIPString();
 }
