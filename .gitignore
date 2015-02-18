@@ -5,7 +5,7 @@
 *.dSYM
 
 #Actual binary
-DNSClient
+DNSResolver
 
 #Object files
 *.o
