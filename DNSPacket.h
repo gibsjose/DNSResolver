@@ -26,6 +26,7 @@ public:
     void Print(void);                           //Print the packet data
     char * GetData(void);                       //Convert the packet into a byte array for transmission
     size_t Size(void);                          //Size of the packet in bytes
+    void SwapName(const std::string &);
 
     //Getters...
     unsigned short GetID(void) { return id; }
