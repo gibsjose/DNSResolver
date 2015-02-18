@@ -58,10 +58,6 @@ int main(int argc, char * argv[]) {
         return -1;
     }
 
-    // std::cout << "===========================================\n";
-    // std::cout << "Connecting to " << address << ":" << port <<std::endl;
-    // std::cout << "===========================================\n" << std::endl;
-
     //inet_addr() converts a string-address into the proper type
     //Specify the address for the socket
     //Create the socket address structure and populate it's fields
@@ -69,9 +65,6 @@ int main(int argc, char * argv[]) {
     serveraddr.sin_family = AF_INET;                            //Specify the family again (AF_INET = internet family)
     serveraddr.sin_port = htons(lConfigManager.getResolverPort());                        //Specify the port on which to send data (16-bit) (# < 1024 is off-limits)
     serveraddr.sin_addr.s_addr = lConfigManager.getResolverIPInetAddr();        //Specify the IP address of the server with which to communicate
-
-    //"Connect" to the server by sending it 'STX' and expect an 'ACK' back.
-
 
     fd_set sockets;
 
@@ -93,6 +86,8 @@ int main(int argc, char * argv[]) {
         //Get domain from user
         std::cout << "Enter a domain name: ";
         std::cin >> domain;
+
+        resolver.SetDomain(domain);
 
         //Create a request DNS packets
         DNSPacket requestPacket(domain);
