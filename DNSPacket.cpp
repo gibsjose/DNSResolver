@@ -409,3 +409,7 @@ char * DNSPacket::GetData(void) {
 
     return data;
 }
+
+void DNSPacket::SwapName(const std::string & n_name) {
+    this->questions[0].EncodeName(n_name);
+}
