@@ -32,6 +32,19 @@ void Record::EncodeName(void) {
     displayName = oss.str();
 }
 
+Record:Record(const Record & tempRecord) {
+    this->name = malloc(strlen(tempRecord.name));
+    memcpy(this->name, tempRecord.name, strlen(tempRecord.name));
+
+    this->displayName = tempRecord.displayName;
+    this->rawName = tempRecord.rawName;
+    this->recordType = tempRecord.recordType;
+    this.recordClass = tempRecord.recordClass;
+
+    this->data = malloc(tempRecord.dataLength);
+    memcpy(this->data, tempRecord.data, this->size());
+}
+
 void Record::EncodeName(const std::string & rawName) {
     this->rawName = rawName;
     this->EncodeName();

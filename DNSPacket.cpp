@@ -37,6 +37,9 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
         this->data = NULL;
     }
 
+    //store the lenght
+    this->dataLength = length;
+
     QuestionRecord question;
 
     //Copy the data
@@ -259,6 +262,24 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
     }
 }
 
+//Copy constructor
+DNSPacket::DNSPacket(const DNSPacket tempPacket) {
+    this->id = tempPacket.id;
+    this->flags = tempPacket.flags;
+    this->qdcount = tempPacket.qdcount;
+    this->ancount = tempPacket.ancount;
+    this->nscount = tempPacket.nscount;
+    this->arcount = tempPacket.arcount;
+    this->questions = tempPacket.questions;
+    this->answers = tempPacket.answers;
+    this->nameServers = tempPacket.nameServers;
+    this->additionals = tempPacket.additionals;
+
+    this.dataLength = tempPacket.dataLength;
+    this->data = malloc(tempPacket.dataLength);
+    memcpy(this->data, tempPacket.data, dataLength);
+}
+
 void DNSPacket::Print(void) {
     std::cout << "DNS Packet:" << std::endl;
     std::cout << "<----------------------------------------------------------------------->" << std::endl;
@@ -360,6 +381,7 @@ char * DNSPacket::GetData(void) {
     size_t dataLen = this->Size();
 
     data = (char *)malloc(dataLen);
+    dataLength = dataLen;
     char * p = data;
 
     unsigned short id = SWAP16(this->id);

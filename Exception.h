@@ -139,4 +139,24 @@ private:
     std::string message;
 };
 
+class TTLExpiredException : public Exception {
+public:
+    TTLExpiredException(const std::string & message) : Exception() {
+        this->message = message;
+    }
+
+    ~TTLExpiredException() throw() {}
+
+    const char * what() const throw() {
+        std::string tmp;
+
+        tmp = "---> TTLExpiredException: " + message;
+
+        return tmp.c_str();
+    }
+
+private:
+    std::string message;
+};
+
 #endif

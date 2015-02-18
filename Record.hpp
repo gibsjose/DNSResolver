@@ -39,6 +39,8 @@ public:
         data = NULL;
     }
 
+    Record(const Record & tempRecord);
+
     ~Record(void) {
         if(name != NULL) {
             //free(name);

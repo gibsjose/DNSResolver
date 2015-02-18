@@ -15,6 +15,7 @@ class DNSPacket {
 public:
     DNSPacket(const std::string &);             //Construct a request packet with the domain name (rawName)
     DNSPacket(const char *, const size_t);      //Construct a response packet with the raw data (data)
+    DNSPacket(const & DNSPacket);               //Copy constructor
 
     ~DNSPacket(void) {
         if(data != NULL) {
@@ -52,6 +53,7 @@ private:
     std::vector<NameServerRecord> nameServers;
     std::vector<AdditionalRecord> additionals;
 
+    size_t dataLength;
     char * data;
 };
 
