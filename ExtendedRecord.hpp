@@ -14,7 +14,7 @@ public:
         rdata.clear();
     }
 
-    uint32_t GetTTL(void) { return ttl; }
+    uint32_t GetTTL(void) const { return ttl; }
     unsigned short GetRecordDataLength(void) { return rdlength; }
     std::string & GetRecordData(void) { return rdata; }
 

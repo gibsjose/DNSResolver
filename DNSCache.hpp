@@ -3,9 +3,6 @@
 #include <map>
 #include "DNSPacket.h"
 
-typedef std::map<std::string, DNSPacket *> PacketMap_t;
-typedef std::map<std::string, StringNode> StringMap_t;
-
 class PacketNode
 {
 public:
@@ -23,7 +20,7 @@ public:
 class StringNode
 {
 public:
-    StringNode(std::string & aIP, uint32_t aTTL)
+    StringNode(const std::string & aIP, const uint32_t aTTL)
     {
         mString = aIP;
         mTTL = aTTL;
@@ -32,6 +29,9 @@ public:
     std::string mString;
     time_t mTTL;
 };
+
+typedef std::map<std::string, DNSPacket *> PacketMap_t;
+typedef std::map<std::string, StringNode *> StringMap_t;
 
 class DNSCache
 {
@@ -49,6 +49,8 @@ public:
     std::string & GetAddress(const std::string & ) const;
     std::string & GetAlias(const std::string & ) const;
 private:
+    uint32_t getMinTTLFromPacket(const DNSPacket &) const;
+
     //Store the raw DNS packet data keyed by the domain name
     PacketMap_t mPacketCache;
     StringMap_t mAddressCache;

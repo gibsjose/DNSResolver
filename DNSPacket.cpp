@@ -263,7 +263,7 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
 }
 
 //Copy constructor
-DNSPacket::DNSPacket(const DNSPacket tempPacket) {
+DNSPacket::DNSPacket(const DNSPacket & tempPacket) {
     this->id = tempPacket.id;
     this->flags = tempPacket.flags;
     this->qdcount = tempPacket.qdcount;
@@ -275,8 +275,8 @@ DNSPacket::DNSPacket(const DNSPacket tempPacket) {
     this->nameServers = tempPacket.nameServers;
     this->additionals = tempPacket.additionals;
 
-    this.dataLength = tempPacket.dataLength;
-    this->data = malloc(tempPacket.dataLength);
+    this->dataLength = tempPacket.dataLength;
+    this->data = (char *)malloc(tempPacket.dataLength);
     memcpy(this->data, tempPacket.data, dataLength);
 }
 

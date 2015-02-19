@@ -75,7 +75,7 @@ public:
 
     void Print(void);
 
-    size_t Size(void);
+    size_t Size(void) const;
 
     char * GetData(void);
 

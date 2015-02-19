@@ -9,24 +9,21 @@ DNSCache::~DNSCache()
         lIter != mPacketCache.end();
         lIter++)
     {
-        delete lIter.second;
-        lIter.second = nullptr;
+        delete lIter->second;
     }
 
     for(StringMap_t::iterator lIter = mAddressCache.begin();
         lIter != mAddressCache.end();
         lIter++)
     {
-        delete lIter.second;
-        lIter.second = nullptr;
+        delete lIter->second;
     }
 
     for(StringMap_t::iterator lIter = mAliasCache.begin();
         lIter != mAliasCache.end();
         lIter++)
     {
-        delete lIter.second;
-        lIter.second = nullptr;
+        delete lIter->second;
     }
 
     mPacketCache.clear();
@@ -40,85 +37,89 @@ void DNSCache::AddPacket(const std::string & aDomain, const DNSPacket & aPacket)
     // Create a copy of the packet.
     DNSPacket * lPacket = new DNSPacket(aPacket);
 
-    //Find the minimum TTL in the answers, name servers and additional records.
-    uint32_t lMinTTL;
-    bool lGotFirst = false;
-
-    for(std::vector<AnswerRecord>::iterator lIter = lPacket->GetAnswerSection().begin();
-        lIter != lPacket->GetAnswerSection().end();
-        lIter++)
-    {
-        if(!lGotFirst)
-        {
-            //Grab an initial value if one has not yet been chosen.
-            lMinTTL = lIter.GetTTL();
-            lGotFirst = true;
-        }
-        else
-        {
-            //If the current TTL is less than the min, grab that one.
-            if(lIter.GetTTL() < lMinTTL)
-            {
-                lMinTTL = liter.GetTTL();
-            }
-        }
-    }
-
-    for(std::vector<NameServerRecord>::iterator lIter = lPacket->GetNameServerSection().begin();
-        lIter != lPacket->GetNameServerSection().end();
-        lIter++)
-    {
-        if(!lGotFirst)
-        {
-            //Grab an initial value if one has not yet been chosen.
-            lMinTTL = lIter.GetTTL();
-            lGotFirst = true;
-        }
-        else
-        {
-            //If the current TTL is less than the min, grab that one.
-            if(lIter.GetTTL() < lMinTTL)
-            {
-                lMinTTL = liter.GetTTL();
-            }
-        }
-    }
-
-    for(std::vector<AdditionalRecord>::iterator lIter = lPacket->GetAdditionalSection().begin();
-        lIter != lPacket->GetAdditionalSection().end();
-        lIter++)
-    {
-        if(!lGotFirst)
-        {
-            //Grab an initial value if one has not yet been chosen.
-            lMinTTL = lIter.GetTTL();
-            lGotFirst = true;
-        }
-        else
-        {
-            //If the current TTL is less than the min, grab that one.
-            if(lIter.GetTTL() < lMinTTL)
-            {
-                lMinTTL = liter.GetTTL();
-            }
-        }
-    }
-
     //Construct the cache element with the packet data and the minimum TTL.
     //Add the seconds to live to now.
-    PacketNode * lPacketNode = new PacketNode(lPacket, time(NULL) + lMinTTL);
+    PacketNode * lPacketNode = new PacketNode(lPacket, time(NULL) + getMinTTLFromPacket(aPacket));
 
     //If the packet exists already, overwrite but do it after releasing memory.
     PacketMap_t::iterator lIter = mPacketCache.find(aDomain);
     if(lIter != mPacketCache.end())
     {
-        delete lIter.second;
-        lIter.second = nullptr;
+        delete lIter->second;
         mPacketCache.erase(lIter);
     }
 
     //Put the cache element in the map.
-    mCache[aDomain] = lPacketNode;
+    mPacketCache[aDomain] = lPacketNode->mPacket;
+}
+
+//Find the minimum TTL in the answers, name servers and additional records.
+uint32_t DNSCache::getMinTTLFromPacket(const DNSPacket & aPacket) const
+{
+    uint32_t lMinTTL;
+    bool lGotFirst = false;
+
+    for(std::vector<AnswerRecord>::const_iterator lIter = aPacket.GetAnswerSection().begin();
+        lIter != aPacket.GetAnswerSection().end();
+        lIter++)
+    {
+        if(!lGotFirst)
+        {
+            //Grab an initial value if one has not yet been chosen.
+            lMinTTL = lIter->GetTTL();
+            lGotFirst = true;
+        }
+        else
+        {
+            //If the current TTL is less than the min, grab that one.
+            if(lIter->GetTTL() < lMinTTL)
+            {
+                lMinTTL = lIter->GetTTL();
+            }
+        }
+    }
+
+    for(std::vector<NameServerRecord>::const_iterator lIter = aPacket.GetNameServerSection().begin();
+        lIter != aPacket.GetNameServerSection().end();
+        lIter++)
+    {
+        if(!lGotFirst)
+        {
+            //Grab an initial value if one has not yet been chosen.
+            lMinTTL = lIter->GetTTL();
+            lGotFirst = true;
+        }
+        else
+        {
+            //If the current TTL is less than the min, grab that one.
+            if(lIter->GetTTL() < lMinTTL)
+            {
+                lMinTTL = lIter->GetTTL();
+            }
+        }
+    }
+
+    for(std::vector<AdditionalRecord>::const_iterator lIter = aPacket.GetAdditionalSection().begin();
+        lIter != aPacket.GetAdditionalSection().end();
+        lIter++)
+    {
+        if(!lGotFirst)
+        {
+            //Grab an initial value if one has not yet been chosen.
+            lMinTTL = lIter->GetTTL();
+            lGotFirst = true;
+        }
+        else
+        {
+            //If the current TTL is less than the min, grab that one.
+            if(lIter->GetTTL() < lMinTTL)
+            {
+                lMinTTL = lIter->GetTTL();
+            }
+        }
+    }
+
+    return lMinTTL;
 }
 
 void DNSCache::AddAddress(const std::string & aName, const std::string & aIP, uint32_t aTTL)
@@ -126,7 +127,7 @@ void DNSCache::AddAddress(const std::string & aName, const std::string & aIP, ui
     StringMap_t::iterator lIter = mAddressCache.find(aName);
     if(lIter != mAddressCache.end())
     {
-        delete lIter.second;
+        delete lIter->second;
         mAddressCache.erase(lIter);
     }
     mAddressCache[aName] = new StringNode(aIP, aTTL);
@@ -137,7 +138,7 @@ void DNSCache::AddAlias(const std::string & aAlias, const std::string & aName, u
     StringMap_t::iterator lIter = mAliasCache.find(aAlias);
     if(lIter != mAliasCache.end())
     {
-        delete lIter.second;
+        delete lIter->second;
         mAliasCache.erase(lIter);
     }
     mAliasCache[aAlias] = new StringNode(aName, aTTL);
@@ -147,7 +148,7 @@ void DNSCache::AddAlias(const std::string & aAlias, const std::string & aName, u
 //Get the raw cached packet
 DNSPacket * DNSCache::GetPacket(const std::string & aDomain) const
 {
-    PacketMap_t::iterator lIter = mPacketCache.find(aDomain);
+    PacketMap_t::const_iterator lIter = mPacketCache.find(aDomain);
     if(lIter == mPacketCache.end())
     {
         throw GeneralException("Item not in packet cache: " + aDomain);
@@ -156,9 +157,9 @@ DNSPacket * DNSCache::GetPacket(const std::string & aDomain) const
     {
         //There is a candidate packet, but return it only if it has a TTL equal
         //to or greater than now.
-        if(time(NULL) <= lIter.second.mTTL)
+        if(time(NULL) <= this->getMinTTLFromPacket(*(lIter->second)))
         {
-            return lIter.second.mPacket;
+            return lIter->second;
         }
         else
         {
@@ -169,7 +170,7 @@ DNSPacket * DNSCache::GetPacket(const std::string & aDomain) const
 
 std::string & DNSCache::GetAddress(const std::string & aName) const
 {
-    StringMap_t::iterator lIter = mAddressCache.find(aName);
+    StringMap_t::const_iterator lIter = mAddressCache.find(aName);
     if(lIter == mAddressCache.end())
     {
         throw GeneralException("Item not in address cache: " + aName);
@@ -178,9 +179,9 @@ std::string & DNSCache::GetAddress(const std::string & aName) const
     {
         //There is a candidate address, but return it only if it has a TTL equal
         //to or greater than now.
-        if(time(NULL) <= lIter.second.mTTL)
+        if(time(NULL) <= lIter->second->mTTL)
         {
-            return lIter.second.mString;
+            return lIter->second->mString;
         }
         else
         {
@@ -191,7 +192,7 @@ std::string & DNSCache::GetAddress(const std::string & aName) const
 
 std::string & DNSCache::GetAlias(const std::string & aAlias) const
 {
-    StringMap_t::iterator lIter = mAliasCache.find(aAlias);
+    StringMap_t::const_iterator lIter = mAliasCache.find(aAlias);
     if(lIter == mAliasCache.end())
     {
         throw GeneralException("Item not in alias cache: " + aAlias);
@@ -200,9 +201,9 @@ std::string & DNSCache::GetAlias(const std::string & aAlias) const
     {
         //There is a candidate alias, but return it only if it has a TTL equal
         //to or greater than now.
-        if(time(NULL) <= lIter.second.mTTL)
+        if(time(NULL) <= lIter->second->mTTL)
         {
-            return lIter.second.mString;
+            return lIter->second->mString;
         }
         else
         {
