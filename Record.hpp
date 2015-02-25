@@ -53,11 +53,11 @@ public:
         }
     }
 
-    std::string & GetRawName(void) { return rawName; }
-    std::string & GetDisplayName(void) { return displayName; }
-    char * GetName(void) { return name; }
-    unsigned short GetType(void) { return recordType; }
-    unsigned short GetClass(void) { return recordClass; }
+    const std::string & GetRawName(void) const { return rawName; }
+    const std::string & GetDisplayName(void) const { return displayName; }
+    char * GetName(void) const { return name; }
+    const unsigned short GetType(void) const { return recordType; }
+    const unsigned short GetClass(void) const { return recordClass; }
 
     void SetRawName(const std::string & rawName) { this->rawName = rawName; }
     void SetType(const unsigned short recordType) { this->recordType = recordType; }
