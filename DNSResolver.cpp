@@ -21,6 +21,8 @@ int main(int argc, char * argv[]) {
             continue;
         }
 
+        //DEBUG
+        request.Print();
 
         //DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
         //std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
@@ -40,8 +42,12 @@ int main(int argc, char * argv[]) {
 
         do {
             //Create the server socket based on the configuration (starts at ROOT)
-            resolver.CreateServerSocket();
-            response = resolver.SendServerRequest(request);
+            try {
+                resolver.CreateServerSocket();
+                response = resolver.SendServerRequest(request);
+            } catch(const Exception & e) {
+                std::cerr << e.what() << std::endl;
+            }
 
             //Answer received
             if(response.GetAnswerCount()) {
@@ -52,7 +58,12 @@ int main(int argc, char * argv[]) {
                         //@TODO Add to cache
 
                         //Forward packet to client
-                        resolver.SendClientResponse(response);
+                        try {
+                            resolver.SendClientResponse(response);
+                        } catch(const Exception & e) {
+                            std::cerr << e.what() << std::endl;
+                        }
+
                         break;
                     }
                 }
@@ -77,7 +88,13 @@ int main(int argc, char * argv[]) {
                 } catch(const Exception &e) {
                     //Send response back to client
                     std::cerr << e.what() << std::endl;
-                    resolver.SendClientResponse(response);
+
+                    try {
+                        resolver.SendClientResponse(response);
+                    } catch(const Exception & e) {
+                        std::cerr << e.what() << std::endl;
+                    }
+
                     break;
                 }
             }
@@ -101,6 +118,9 @@ void DNSResolver::Initialize(int argc, char ** argv) {
     rootServers.push_back("193.0.14.129");          //K.ROOT-SERVERS.NET
     rootServers.push_back("199.7.83.42");           //L.ROOT-SERVERS.NET
     rootServers.push_back("202.12.27.33");          //M.ROOT-SERVERS.NET
+
+    //Initialize to first ROOT server
+    serverIP = rootServers.at(0);
 
     //Config manager: parse arguments
     try {
@@ -146,7 +166,7 @@ DNSPacket DNSResolver::GetClientRequest(void) {
 
     if(bytesReceived < 0) {
         throw SocketException("Error receiving bytes from client: recvfrom()");
-    }
+    } //ALSO CHECK FOR TIMEOUT
 
     DNSPacket request(data, bytesReceived);
 
@@ -156,7 +176,9 @@ DNSPacket DNSResolver::GetClientRequest(void) {
 void DNSResolver::CreateServerSocket(void) {
 
     //Create a socket for the server
-    int serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    //std::cout << "Server socket: " << serverSocket << std::endl;
 
     //5 second timeout
     struct timeval to;
@@ -165,12 +187,17 @@ void DNSResolver::CreateServerSocket(void) {
     setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
 
     if(serverSocket < 0) {
-        throw SocketException("Unable to create client socket");
+        throw SocketException("Unable to create server socket");
     }
 
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(serverPort);
     serverAddress.sin_addr.s_addr = inet_addr(serverIP.c_str());
+
+    //DEBUG
+    std::cout << "serverSocket = " << serverSocket << std::endl;
+    std::cout << "serverPort = " << serverPort << std::endl;
+    std::cout << "serverIP = " << serverIP << std::endl;
 }
 
 DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
@@ -188,7 +215,7 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
     memset(&responseData, 0, MAX_DNS_LEN);
 
     unsigned int addressLength = sizeof(serverAddress);
-    int bytesReceived = recvfrom(clientSocket, responseData, MAX_DNS_LEN, 0, (struct sockaddr *)&serverAddress, &addressLength);
+    int bytesReceived = recvfrom(serverSocket, responseData, MAX_DNS_LEN, 0, (struct sockaddr *)&serverAddress, &addressLength);
 
     if(bytesReceived < 0) {
         throw SocketException("Error receiving bytes from server: recvfrom()");

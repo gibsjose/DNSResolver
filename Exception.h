@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <string.h>
+#include <errno.h>
 
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
@@ -55,7 +57,7 @@ public:
     const char * what() const throw() {
         std::string tmp;
 
-        tmp = "---> SocketException: " + message;
+        tmp = "---> SocketException: " + message + ": errno: " + strerror(errno);
 
         return tmp.c_str();
     }
