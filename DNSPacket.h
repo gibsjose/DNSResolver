@@ -36,10 +36,10 @@ public:
     unsigned short GetAnswerCount(void) { return ancount; }
     unsigned short GetNameServerCount(void) { return nscount; }
     unsigned short GetAdditionalRecordCount(void) { return arcount; }
-    const std::vector<QuestionRecord> & GetQuestionSection(void) const { return questions; }
-    const std::vector<AnswerRecord> & GetAnswerSection(void) const { return answers; }
-    const std::vector<NameServerRecord> & GetNameServerSection(void) const { return nameServers; }
-    const std::vector<AdditionalRecord> & GetAdditionalSection(void) const { return additionals; }
+    std::vector<QuestionRecord> & GetQuestionSection(void) { return questions; }
+    std::vector<AnswerRecord> & GetAnswerSection(void) { return answers; }
+    std::vector<NameServerRecord> & GetNameServerSection(void) { return nameServers; }
+    std::vector<AdditionalRecord> & GetAdditionalSection(void) { return additionals; }
 
 private:
     unsigned short id;
