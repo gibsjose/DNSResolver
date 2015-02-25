@@ -34,7 +34,7 @@ char * ExtendedRecord::GetData(void) {
 
     unsigned short recordType = SWAP16(this->recordType);
     unsigned short recordClass = SWAP16(this->recordClass);
-    uint32_t ttl = SWAP16(this->ttl);
+    uint32_t ttl = SWAP32(this->ttl);
     unsigned short rdlength = SWAP16(this->rdlength);
 
     memcpy(p, &(recordType), sizeof(this->recordType));
