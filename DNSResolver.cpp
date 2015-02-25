@@ -49,6 +49,9 @@ int main(int argc, char * argv[]) {
                 std::cerr << e.what() << std::endl;
             }
 
+            std::cout << "RESPONSE FROM SERVER: " << std::endl;
+            response.Print();
+
             //Answer received
             if(response.GetAnswerCount()) {
 
@@ -195,9 +198,9 @@ void DNSResolver::CreateServerSocket(void) {
     serverAddress.sin_addr.s_addr = inet_addr(serverIP.c_str());
 
     //DEBUG
-    std::cout << "serverSocket = " << serverSocket << std::endl;
-    std::cout << "serverPort = " << serverPort << std::endl;
-    std::cout << "serverIP = " << serverIP << std::endl;
+    //std::cout << "serverSocket = " << serverSocket << std::endl;
+    //std::cout << "serverPort = " << serverPort << std::endl;
+    //std::cout << "serverIP = " << serverIP << std::endl;
 }
 
 DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
@@ -227,6 +230,10 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
 }
 
 void DNSResolver::SendClientResponse(DNSPacket & response) {
+
+    //DEBUG
+    response.Print();
+
     char * responseData = response.GetData();
 
     int bytesSent = 0;
