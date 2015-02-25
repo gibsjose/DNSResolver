@@ -28,6 +28,7 @@ public:
     char * GetData(void);                       //Convert the packet into a byte array for transmission
     size_t Size(void);                          //Size of the packet in bytes
     void SwapName(const std::string &);
+    void UnsetRecursionFlag();
 
     //Getters...
     unsigned short GetID(void) { return id; }

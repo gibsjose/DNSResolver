@@ -16,6 +16,7 @@ int main(int argc, char * argv[]) {
         try {
             //Wait for client to make a request and store it
             request = resolver.GetClientRequest();
+            request.UnsetRecursionFlag();
         } catch(const Exception & e) {
             std::cerr << "Error: " << e.what() << std::endl;
             continue;

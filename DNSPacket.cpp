@@ -435,3 +435,8 @@ char * DNSPacket::GetData(void) {
 void DNSPacket::SwapName(const std::string & n_name) {
     this->questions[0].EncodeName(n_name);
 }
+
+void DNSPacket::UnsetRecursionFlag()
+{
+    this->flags &= ~(RD_FLAG);
+}
