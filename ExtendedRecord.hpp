@@ -11,16 +11,24 @@ public:
     ExtendedRecord(void) {
         ttl = 0;
         rdlength = 0;
-        rdata.clear();
+        rdata = NULL;
+    }
+
+    ~ExtendedRecord(void)
+    {
+        if(rdata != NULL)
+        {
+            free(rdata);
+        }
     }
 
     const uint32_t GetTTL(void) const { return ttl; }
     const unsigned short GetRecordDataLength(void) const { return rdlength; }
-    const std::string & GetRecordData(void) const { return rdata; }
+    const char * GetRecordData() const { return this->rdata; }
 
     void SetTTL(const uint32_t ttl) { this->ttl = ttl; }
     void SetRecordDataLength(const unsigned short rdlength) { this->rdlength = rdlength; }
-    void SetRecordData(const std::string & rdata) { this->rdata = rdata; }
+    void SetRecordData(const char * aRdata, const unsigned short aLength);
 
     void Print(void);
 
@@ -33,7 +41,7 @@ public:
 protected:
     uint32_t ttl;
     unsigned short rdlength;
-    std::string rdata;
+    char * rdata;
 };
 
 class AnswerRecord : public ExtendedRecord {};

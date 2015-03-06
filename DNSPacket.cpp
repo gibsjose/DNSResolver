@@ -142,7 +142,8 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
 
             //CNAME Record
             if(answerType == TYPE_CNAME) {
-                answer.SetRecordData(answer.DecodeString(this->data, &p));
+                std::string lString = answer.DecodeString(this->data, &p);
+                answer.SetRecordData(lString.c_str(), lString.size());
             }
 
             //A Record
@@ -155,11 +156,11 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
                 }
                 else {
                     //Copy the record data
-                    unsigned char * rdata = (unsigned char *)calloc(answer_rdlength, sizeof(char));
+                    char * rdata = (char *)calloc(answer_rdlength, sizeof(char));
                     memcpy(rdata, p, answer_rdlength);
                     p += answer_rdlength;
 
-                    answer.SetRecordData(ExtendedRecord::getIPFromBytes(rdata, answer_rdlength));
+                    answer.SetRecordData(rdata, answer_rdlength);
                     free(rdata);
                 }
             }
@@ -203,7 +204,8 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
             nameServer_rdlength = SWAP16(nameServer_rdlength);
             nameServer.SetRecordDataLength(nameServer_rdlength);
 
-            nameServer.SetRecordData(nameServer.DecodeString(this->data, &p));
+            std::string lString = nameServer.DecodeString(this->data, &p);
+            nameServer.SetRecordData(lString.c_str(), lString.size());
 
             this->nameServers.push_back(nameServer);
         }
@@ -246,7 +248,8 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
 
             //CNAME Record
             if(additionalType == TYPE_CNAME) {
-                additional.SetRecordData(additional.DecodeString(this->data, &p));
+                std::string lString = additional.DecodeString(this->data, &p);
+                additional.SetRecordData(lString.c_str(), lString.size());
             }
 
             //A Record
@@ -259,14 +262,15 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
                 }
                 else {
                     //Copy the record data
-                    unsigned char * rdata = (unsigned char *)calloc(additional_rdlength, sizeof(char));
-                    memcpy(rdata, p, additional_rdlength);
+                    additional.SetRecordData(p, additional_rdlength);
                     p += additional_rdlength;
-
-                    additional.SetRecordData(ExtendedRecord::getIPFromBytes(rdata, additional_rdlength));
-                    free(rdata);
                 }
             }
+            else
+            {
+                std::cout << "!!!!!!!!!!!!!!" << std::endl;
+            }
+            additional.Print();
 
             this->additionals.push_back(additional);
         }

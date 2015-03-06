@@ -7,7 +7,27 @@ void ExtendedRecord::Print(void) {
     std::cout << "\t\tClass --> " << DecodeClass(recordClass) << std::endl;
     std::cout << "\t\tTTL --> " << ttl << std::endl;
     std::cout << "\t\tRecord Data Length --> " << rdlength << std::endl;
-    std::cout << "\t\tRecord Data --> " << rdata << std::endl;
+    std::cout << "\t\tRecord Data --> [data not printable]" /* << rdata */ << std::endl;
+}
+
+void ExtendedRecord::SetRecordData(const char * aRdata, const unsigned short aLength){
+    // Both copy the rdata bytes and update the length.
+    if(this->rdata != NULL)
+    {
+        free(rdata);
+    }
+
+    if(aRdata != NULL)
+    {
+        this->rdata = (char*)malloc(sizeof(char) * aLength);
+        memcpy(this->rdata, aRdata, aLength);
+        this->rdlength = aLength;
+    }
+    else
+    {
+        this->rdata = NULL;
+        this->rdlength = 0;
+    }
 }
 
 size_t ExtendedRecord::Size(void) {
@@ -18,7 +38,7 @@ size_t ExtendedRecord::Size(void) {
     size += sizeof(this->recordClass);
     size += sizeof(this->ttl);
     size += sizeof(this->rdlength);
-    size += this->rdata.size();
+    size += this->rdlength;
 
     return size;
 }
@@ -49,9 +69,8 @@ char * ExtendedRecord::GetData(void) {
     memcpy(p, &(rdlength), sizeof(rdlength));
     p += sizeof(rdlength);
 
-    std::cout << "ExtendedRecord::GetData(): rdlength: " << rdlength << std::endl;
-
-    memcpy(p, this->rdata.c_str(), this->rdlength);
+    if(this->rdlength > 0)
+        memcpy(p, this->rdata, this->rdlength);
 
     return data;
 }
