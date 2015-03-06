@@ -49,6 +49,7 @@ int main(int argc, char * argv[]) {
                 response = resolver.SendServerRequest(request);
             } catch(const Exception & e) {
                 std::cerr << e.what() << std::endl;
+                exit(-1);
             }
 
             std::cout << "RESPONSE FROM SERVER:\n------------------------\n" << std::endl;
@@ -303,7 +304,7 @@ void DNSResolver::UpdateServer(DNSPacket & response) {
             //Look up the IP of the name server in the additional records
             for(int j = 0; j < response.GetAdditionalRecordCount(); j++) {
                 if(nameServer == response.GetAdditionalSection().at(j).GetRawName()) {
-                    address = std::string(
+                    address = ExtendedRecord::getIPFromBytes(
                         response.GetAdditionalSection().at(j).GetRecordData(),
                         response.GetAdditionalSection().at(j).GetRecordDataLength()
                     );
