@@ -9,18 +9,22 @@
 class ExtendedRecord : public Record {
 public:
     ExtendedRecord(void) {
-        ttl = 0;
-        rdlength = 0;
-        rdata = NULL;
+        this->ttl = 0;
+        this->rdlength = 0;
+        this->rdata = nullptr;
+        // printf("ExtendedRecord: this->rdata: %p\n", this->rdata);
     }
 
-    ~ExtendedRecord(void)
-    {
-        if(rdata != NULL)
-        {
-            free(rdata);
-        }
-    }
+    // ~ExtendedRecord(void)
+    // {
+    //     if(this->rdata != nullptr)
+    //     {
+    //         // printf("~ExtendedRecord: Freeing this->rdata: %p\n", this->rdata);
+    //         // delete this->rdata;
+    //         this->rdata = nullptr;
+    //         // printf("~ExtendedRecord: this->rdata: %p\n", this->rdata);
+    //     }
+    // }
 
     const uint32_t GetTTL(void) const { return ttl; }
     const unsigned short GetRecordDataLength(void) const { return rdlength; }
@@ -36,7 +40,7 @@ public:
 
     char * GetData(void);
 
-    static std::string getIPFromBytes(unsigned char * aBytes, unsigned short aNumBytes);
+    static std::string getIPFromBytes(const char * aBytes, const unsigned short aNumBytes);
 
 protected:
     uint32_t ttl;

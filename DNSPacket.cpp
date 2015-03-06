@@ -266,11 +266,6 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
                     p += additional_rdlength;
                 }
             }
-            else
-            {
-                std::cout << "!!!!!!!!!!!!!!" << std::endl;
-            }
-            additional.Print();
 
             this->additionals.push_back(additional);
         }

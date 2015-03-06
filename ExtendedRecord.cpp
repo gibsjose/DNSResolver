@@ -7,26 +7,44 @@ void ExtendedRecord::Print(void) {
     std::cout << "\t\tClass --> " << DecodeClass(recordClass) << std::endl;
     std::cout << "\t\tTTL --> " << ttl << std::endl;
     std::cout << "\t\tRecord Data Length --> " << rdlength << std::endl;
-    std::cout << "\t\tRecord Data --> [data not printable]" /* << rdata */ << std::endl;
+    char * str;
+    if(rdata != nullptr)
+    {
+        str = (char*) malloc(sizeof(char) * (rdlength + 2));
+        memcpy(str, rdata, rdlength);
+        str[rdlength] = '\0';
+    }
+    else
+    {
+        str = (char*) malloc(sizeof(char) * 7);
+        strcat(str, "(null)");
+    }
+    std::cout << "\t\tRecord Data --> " << str << std::endl;
+    free(str);
 }
 
 void ExtendedRecord::SetRecordData(const char * aRdata, const unsigned short aLength){
     // Both copy the rdata bytes and update the length.
-    if(this->rdata != NULL)
+    if(this->rdata != nullptr)
     {
-        free(rdata);
+        // printf("SetRecordData: 1Freeing this->rdata: %p\n", this->rdata);
+        delete this->rdata;
+        this->rdata = nullptr;
+        // printf("SetRecordData: 1this->rdata: %p\n", this->rdata);
     }
 
-    if(aRdata != NULL)
+    if(aRdata != nullptr)
     {
         this->rdata = (char*)malloc(sizeof(char) * aLength);
+        // printf("SetRecordData:2 malloc-ing this->rdata: %p\n", this->rdata);
         memcpy(this->rdata, aRdata, aLength);
         this->rdlength = aLength;
     }
     else
     {
-        this->rdata = NULL;
+        this->rdata = nullptr;
         this->rdlength = 0;
+        // printf("SetRecordData:3 0 length, this->rdata: %p\n", this->rdata);
     }
 }
 
@@ -69,13 +87,13 @@ char * ExtendedRecord::GetData(void) {
     memcpy(p, &(rdlength), sizeof(rdlength));
     p += sizeof(rdlength);
 
-    if(this->rdlength > 0)
+    if(this->rdlength > 0 && this->rdata != nullptr)
         memcpy(p, this->rdata, this->rdlength);
 
     return data;
 }
 
-std::string ExtendedRecord::getIPFromBytes(unsigned char * aBytes, unsigned short aNumBytes)
+std::string ExtendedRecord::getIPFromBytes(const char * aBytes, const unsigned short aNumBytes)
 {
     char * str = (char *)malloc(sizeof(char) * 32);
     sprintf(str, "%u.%u.%u.%u", static_cast<unsigned>(aBytes[0]), static_cast<unsigned>(aBytes[1]), \

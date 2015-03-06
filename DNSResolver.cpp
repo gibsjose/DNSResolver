@@ -17,8 +17,6 @@ int main(int argc, char * argv[]) {
             //Wait for client to make a request and store it
             request = resolver.GetClientRequest();
             request.UnsetRecursionFlag();
-            // Unset the AD bit in the flags.
-            //request.UnsetADFlag();
         } catch(const Exception & e) {
             std::cerr << "Error: " << e.what() << std::endl;
             continue;
@@ -298,12 +296,18 @@ void DNSResolver::UpdateServer(DNSPacket & response) {
         std::string address;
 
         for(int i = 0; i < response.GetNameServerCount(); i++ ) {
-            nameServer = response.GetNameServerSection().at(i).GetRecordData();
+            nameServer = std::string(response.GetNameServerSection().at(i).GetRecordData(),
+                                     response.GetNameServerSection().at(i).GetRecordDataLength());
+            std::cout << "Nameserver: '" << nameServer << "'." << std::endl;
 
             //Look up the IP of the name server in the additional records
             for(int j = 0; j < response.GetAdditionalRecordCount(); j++) {
                 if(nameServer == response.GetAdditionalSection().at(j).GetRawName()) {
-                    address = response.GetAdditionalSection().at(j).GetRecordData();
+                    address = std::string(
+                        response.GetAdditionalSection().at(j).GetRecordData(),
+                        response.GetAdditionalSection().at(j).GetRecordDataLength()
+                    );
+
                     std::cout << "Found name server address: " << address << std::endl;
                     break;
                 } else {
