@@ -10,7 +10,8 @@
 #include "Exception.h"
 #include "StringUtilities.h"
 
-#define RESOLVER_CONF_FILE "/etc/resolv.conf"
+// This is the default port to listen on for incoming DNS requests.
+#define DEFAULT_PORT 8888
 
 class ConfigManager
 {
@@ -18,13 +19,9 @@ public:
     ConfigManager();
     ~ConfigManager();
     void parseArgs(int argc, char * argv[]);
-    int getClientPort() const;
-    const std::string & getResolverIPString() const;
-    in_addr_t getResolverIPInetAddr() const;
+    int getListeningPort() const;
 
 private:
     std::string mResolverIP;
-    unsigned mClientPort;
-
-    void parseResolver(std::string & aResolverIP);
+    unsigned mListeningPort;
 };

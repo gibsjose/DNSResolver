@@ -17,12 +17,15 @@ int main(int argc, char * argv[]) {
             //Wait for client to make a request and store it
             request = resolver.GetClientRequest();
             request.UnsetRecursionFlag();
+            // Unset the AD bit in the flags.
+            //request.UnsetADFlag();
         } catch(const Exception & e) {
             std::cerr << "Error: " << e.what() << std::endl;
             continue;
         }
 
         //DEBUG
+        std::cout << "Request:\n-----------------------\n" << std::endl;
         request.Print();
 
         //DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
@@ -50,7 +53,7 @@ int main(int argc, char * argv[]) {
                 std::cerr << e.what() << std::endl;
             }
 
-            std::cout << "RESPONSE FROM SERVER: " << std::endl;
+            std::cout << "RESPONSE FROM SERVER:\n------------------------\n" << std::endl;
             response.Print();
 
             //Answer received
@@ -135,7 +138,7 @@ void DNSResolver::Initialize(int argc, char ** argv) {
         exit(-1);
     }
 
-    clientPort = configManager.getClientPort();
+    clientPort = configManager.getListeningPort();
 }
 
 void DNSResolver::CreateClientSocket(void) {
@@ -158,23 +161,50 @@ void DNSResolver::CreateClientSocket(void) {
     clientAddress.sin_addr.s_addr = INADDR_ANY;
 
     bind(clientSocket, (struct sockaddr *) &clientAddress, sizeof(clientAddress));
+
+    //DEBUG
+    std::cout << "Client port: " << clientPort << std::endl;
+    std::cout << "Client socket: " << clientSocket << std::endl;
 }
 
 DNSPacket DNSResolver::GetClientRequest(void) {
     unsigned int addressLength = sizeof(clientAddress);
 
     char data[MAX_DNS_LEN];
-    memset(&data, 0, MAX_DNS_LEN);
+    int bytesReceived;
 
-    int bytesReceived = recvfrom(clientSocket, data, MAX_DNS_LEN, 0, (struct sockaddr *)&clientAddress, &addressLength);
+    while(true)
+    {
+        memset(&data, 0, MAX_DNS_LEN);
+        bytesReceived = recvfrom(clientSocket, data, MAX_DNS_LEN, 0,
+                                 (struct sockaddr *)&clientAddress,
+                                 &addressLength
+                                );
+        if(bytesReceived < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+        {
+            //The socket timed out from reading data since it is a non-blocking read attempt.
+            //Another attempt has to be made.
+            std::cout << "Socket timeout; receiving again.." << std::endl;
+            continue;
+        }
+        else if(bytesReceived < 0) {
+            throw SocketException("Error receiving bytes from client: recvfrom()");
+        }
+        else
+        {
+            // DEBUG
+            std::cout << "Received " << bytesReceived << " byte request from client." << std::endl;
 
-    if(bytesReceived < 0) {
-        throw SocketException("Error receiving bytes from client: recvfrom()");
-    } //ALSO CHECK FOR TIMEOUT
+            DNSPacket request(data, bytesReceived);
 
-    DNSPacket request(data, bytesReceived);
+            // For some reason "dig" sends extra data in the Answer Section when it makes a DNS request.
+            // Since if this extra data is sent as-is to the root DNS server a response is obtained saying
+            // the server was unable to parse the packet, remove the answer section from the request packet.
+            request.removeAnswerSection();
 
-    return request;
+            return request;
+        }
+    }
 }
 
 void DNSResolver::CreateServerSocket(void) {
@@ -182,7 +212,7 @@ void DNSResolver::CreateServerSocket(void) {
     //Create a socket for the server
     serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
-    //std::cout << "Server socket: " << serverSocket << std::endl;
+    std::cout << "Server socket assigned: " << serverSocket << std::endl;
 
     //5 second timeout
     struct timeval to;
@@ -199,15 +229,17 @@ void DNSResolver::CreateServerSocket(void) {
     serverAddress.sin_addr.s_addr = inet_addr(serverIP.c_str());
 
     //DEBUG
-    //std::cout << "serverSocket = " << serverSocket << std::endl;
-    //std::cout << "serverPort = " << serverPort << std::endl;
-    //std::cout << "serverIP = " << serverIP << std::endl;
+    std::cout << "serverSocket = " << serverSocket << std::endl;
+    std::cout << "serverPort = " << serverPort << std::endl;
+    std::cout << "serverIP = " << serverIP << std::endl;
 }
 
 DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
     char * requestData = request.GetData();
 
     int bytesSent = 0;
+
+    std::cout << "Sending to DNS server on socket (" << serverSocket << ")." << std::endl;
 
     bytesSent = sendto(serverSocket, requestData, request.Size(), 0, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
 
@@ -218,6 +250,8 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
     char responseData[MAX_DNS_LEN];
     memset(&responseData, 0, MAX_DNS_LEN);
 
+    std::cout << "Receiving from DNS server on socket (" << serverSocket << ")." << std::endl;
+
     unsigned int addressLength = sizeof(serverAddress);
     int bytesReceived = recvfrom(serverSocket, responseData, MAX_DNS_LEN, 0, (struct sockaddr *)&serverAddress, &addressLength);
 
@@ -225,14 +259,23 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
         throw SocketException("Error receiving bytes from server: recvfrom()");
     }
 
-    DNSPacket response(responseData, bytesReceived);
-
-    return response;
+    try
+    {
+        DNSPacket response(responseData, bytesReceived);
+        return response;
+    }
+    catch(const Exception & e)
+    {
+        std::cerr << "Error parsing response from server: " << e.what() << std::endl;
+        exit(-1);
+    }
 }
 
 void DNSResolver::SendClientResponse(DNSPacket & response) {
 
     //DEBUG
+    std::cout << "Sending client response...\n" << std::endl;
+
     response.Print();
 
     char * responseData = response.GetData();
@@ -280,8 +323,13 @@ void DNSResolver::UpdateServer(DNSPacket & response) {
         }
 
     } else {
-        if(rootServerIndex >= rootServers.size()) {
+        if((rootServerIndex + 1) >= rootServers.size()) {
             throw GeneralException("Root servers exhausted: DNS Lookup failed");
+        }
+        else
+        {
+            // Look at the next root server.
+            rootServerIndex++;
         }
 
         serverIP = rootServers.at(rootServerIndex);

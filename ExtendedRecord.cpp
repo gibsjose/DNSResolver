@@ -37,19 +37,21 @@ char * ExtendedRecord::GetData(void) {
     uint32_t ttl = SWAP32(this->ttl);
     unsigned short rdlength = SWAP16(this->rdlength);
 
-    memcpy(p, &(recordType), sizeof(this->recordType));
-    p += sizeof(this->recordType);
+    memcpy(p, &(recordType), sizeof(recordType));
+    p += sizeof(recordType);
 
-    memcpy(p, &(recordClass), sizeof(this->recordClass));
-    p += sizeof(this->recordClass);
+    memcpy(p, &(recordClass), sizeof(recordClass));
+    p += sizeof(recordClass);
 
-    memcpy(p, &(ttl), sizeof(this->ttl));
-    p += sizeof(this->ttl);
+    memcpy(p, &(ttl), sizeof(ttl));
+    p += sizeof(ttl);
 
-    memcpy(p, &(rdlength), sizeof(this->rdlength));
-    p += sizeof(this->rdlength);
+    memcpy(p, &(rdlength), sizeof(rdlength));
+    p += sizeof(rdlength);
 
-    memcpy(p, this->rdata.c_str(), this->rdata.size());
+    std::cout << "ExtendedRecord::GetData(): rdlength: " << rdlength << std::endl;
+
+    memcpy(p, this->rdata.c_str(), this->rdlength);
 
     return data;
 }

@@ -2,8 +2,7 @@
 
 ConfigManager::ConfigManager()
 {
-    mClientPort = -1;
-    mResolverIP.clear();
+    mListeningPort = -1;
 }
 
 ConfigManager::~ConfigManager()
@@ -16,7 +15,7 @@ void ConfigManager::parseArgs(int aArgc, char * aArgv[])
     // Attempt to find the port and IP of the DNS resolver on the command line.
     // if(aArgc < 3)
     // {
-    //     std::cerr << "Not enough arguments. Ex: DNSClient -p 53 [-ip 127.0.0.1]\n";
+    //     std::cerr << "Not enough arguments. Ex: DNSResolver -p 8888\n";
     //     exit(-1);
     // }
     for(int i = 1; i + 1 < aArgc; i = i + 2)
@@ -26,68 +25,19 @@ void ConfigManager::parseArgs(int aArgc, char * aArgv[])
 
       if(!strcmp("-p", lArgFlag))
       {
-        mClientPort = atoi(lArgValue);
-      }
-      else if(!strcmp("-ip", lArgFlag))
-      {
-        mResolverIP = lArgValue;
+        mListeningPort = atoi(lArgValue);
       }
     }
 
-    // If the resolver IP was not set on the command line, attempt to find the IP
-    // in /etc/resolv.conf
-    if(mResolverIP.empty())
+    // If no port was set for which to listen on for incoming DNS requests, set
+    // it to the default port.
+    if(mListeningPort == -1)
     {
-        parseResolver(mResolverIP);
-    }
-
-    if(mClientPort == -1)
-    {
-        mClientPort = 53;
+        mListeningPort = DEFAULT_PORT;
     }
 }
 
-int ConfigManager::getClientPort() const
+int ConfigManager::getListeningPort() const
 {
-    return mClientPort;
-}
-
-const std::string & ConfigManager::getResolverIPString() const
-{
-    return mResolverIP;
-}
-
-in_addr_t ConfigManager::getResolverIPInetAddr() const
-{
-    return inet_addr(getResolverIPString().c_str());
-}
-
-void ConfigManager::parseResolver(std::string & aResolverIP)
-{
-    std::ifstream lFileStream;
-    lFileStream.open(RESOLVER_CONF_FILE, std::ios::in);
-    if(lFileStream.is_open())
-    {
-        while(!lFileStream.eof())
-        {
-            std::string lLine;
-            getline(lFileStream, lLine);
-            std::vector<std::string> lStrings = StringUtilities::SplitString(lLine, " ");
-
-            if(lStrings.size() >= 2 && lStrings[0] == "nameserver")
-            {
-                mResolverIP = lStrings[1];
-            }
-        }
-    }
-    else
-    {
-        throw ParseException(RESOLVER_CONF_FILE, "Could not open.");
-    }
-    lFileStream.close();
-
-    if(mResolverIP.empty())
-    {
-        throw ParseException("Could not determine nameserver.");
-    }
+    return mListeningPort;
 }

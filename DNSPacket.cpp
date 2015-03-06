@@ -1,6 +1,9 @@
 #include "DNSPacket.h"
 
 DNSPacket::DNSPacket(const std::string & name) {
+    this->data = NULL;
+    this->dataLength = 0;
+
     srand(time(NULL));
 
     //Create a random ID
@@ -32,233 +35,241 @@ DNSPacket::DNSPacket(const std::string & name) {
 }
 
 DNSPacket::DNSPacket(const char * data, const size_t length) {
+    //store the length
+    this->dataLength = length;
+
     if(length == 0) {
         //EXCEPTION!
         this->data = NULL;
     }
+    else
+    {
+        //Copy the data
+        this->data = (char *)malloc(length);
+        memcpy(this->data, data, length);
 
-    //store the lenght
-    this->dataLength = length;
+        //Parse the raw byte stream
+        const char * p = this->data;
 
-    QuestionRecord question;
+        memcpy(&(this->id), p, sizeof(this->id));
+        p += sizeof(this->id);
+        this->id = SWAP16(this->id);
 
-    //Copy the data
-    this->data = (char *)malloc(length);
-    memcpy(this->data, data, length);
+        memcpy(&(this->flags), p, sizeof(this->flags));
+        p += sizeof(this->flags);
+        this->flags = SWAP16(this->flags);
 
-    //Parse the raw byte stream
-    const char * p = this->data;
-
-    memcpy(&(this->id), p, sizeof(this->id));
-    p += sizeof(this->id);
-    this->id = SWAP16(this->id);
-
-    memcpy(&(this->flags), p, sizeof(this->flags));
-    p += sizeof(this->flags);
-    this->flags = SWAP16(this->flags);
-
-    memcpy(&(this->qdcount), p, sizeof(this->qdcount));
-    p += sizeof(this->qdcount);
-    this->qdcount = SWAP16(this->qdcount);
-
-    memcpy(&(this->ancount), p, sizeof(this->ancount));
-    p += sizeof(this->ancount);
-    this->ancount = SWAP16(this->ancount);
-
-    memcpy(&(this->nscount), p, sizeof(this->nscount));
-    p += sizeof(this->nscount);
-    this->nscount = SWAP16(this->nscount);
-
-    memcpy(&(this->arcount), p, sizeof(this->arcount));
-    p += sizeof(this->arcount);
-    this->arcount = SWAP16(this->arcount);
-
-    //Decode the question name
-    question.DecodeName(this->data, &p);
-
-    short recordType;
-    short recordClass;
-
-    memcpy(&recordType, p, sizeof(recordType));
-    p += sizeof(recordType);
-    recordType = SWAP16(recordType);
-    question.SetType(recordType);
-
-    memcpy(&recordClass, p, sizeof(recordClass));
-    p += sizeof(recordClass);
-    recordClass = SWAP16(recordClass);
-    question.SetClass(recordClass);
-
-    //Add the question record
-    this->questions.push_back(question);
-
-    //Parse the answer section
-    for(int i = 0; i < this->ancount; i++) {
-        AnswerRecord answer;
-
-        printf("Decoding the %ith answer name...\n", i);
-
-        //Decode the name
-        answer.DecodeName(this->data, &p);
-
-        //Copy the type
-        unsigned short answerType;
-        memcpy(&answerType, p, sizeof(short));
-        p += sizeof(short);
-        answerType = SWAP16(answerType);
-        answer.SetType(answerType);
-
-        //Copy the class
-        unsigned short answerClass;
-        memcpy(&answerClass, p, sizeof(answerClass));
-        p += sizeof(answerClass);
-        answerClass = SWAP16(answerClass);
-        answer.SetClass(answerClass);
-
-        //Copy the time to live
-        uint32_t answerTTL;
-        memcpy(&answerTTL, p, sizeof(answerTTL));
-        p += sizeof(answerTTL);
-        answerTTL = SWAP32(answerTTL);
-        answer.SetTTL(answerTTL);
-
-        //Copy the data length
-        unsigned short answer_rdlength;
-        memcpy(&answer_rdlength, p, sizeof(answer_rdlength));
-
-        p += sizeof(answer_rdlength);
-        answer_rdlength = SWAP16(answer_rdlength);
-        answer.SetRecordDataLength(answer_rdlength);
-
-        //CNAME Record
-        if(answerType == TYPE_CNAME) {
-            answer.SetRecordData(answer.DecodeString(this->data, &p));
+        if((flags & 0xF) != 0)
+        {
+            // Since the Response Code is nonzero, the server had a problem interpreting the packet
+            // and this response is botched.
+            throw ParseException("Format error: the server was unable to interpret the query.");
         }
 
-        //A Record
-        else if(answerType == TYPE_A) {
+        memcpy(&(this->qdcount), p, sizeof(this->qdcount));
+        p += sizeof(this->qdcount);
+        this->qdcount = SWAP16(this->qdcount);
 
-            //Make sure length is 4 for A records
-            if(answer_rdlength != 4) {
-                //EXCEPTION! Should always be 4 for an answer of type A (IPv4...)
-                std::cout << "Error: Type A Records should always have a length of 4" << std::endl;
-            }
-            else {
-                //Copy the record data
-                unsigned char * rdata = (unsigned char *)calloc(answer_rdlength, sizeof(char));
-                memcpy(rdata, p, answer_rdlength);
-                p += answer_rdlength;
+        memcpy(&(this->ancount), p, sizeof(this->ancount));
+        p += sizeof(this->ancount);
+        this->ancount = SWAP16(this->ancount);
 
-                answer.SetRecordData(ExtendedRecord::getIPFromBytes(rdata, answer_rdlength));
-                free(rdata);
+        memcpy(&(this->nscount), p, sizeof(this->nscount));
+        p += sizeof(this->nscount);
+        this->nscount = SWAP16(this->nscount);
+
+        memcpy(&(this->arcount), p, sizeof(this->arcount));
+        p += sizeof(this->arcount);
+        this->arcount = SWAP16(this->arcount);
+
+        //Decode the question name
+        QuestionRecord question;
+        question.DecodeName(this->data, &p);
+
+        short recordType;
+        short recordClass;
+
+        memcpy(&recordType, p, sizeof(recordType));
+        p += sizeof(recordType);
+        recordType = SWAP16(recordType);
+        question.SetType(recordType);
+
+        memcpy(&recordClass, p, sizeof(recordClass));
+        p += sizeof(recordClass);
+        recordClass = SWAP16(recordClass);
+        question.SetClass(recordClass);
+
+        //Add the question record
+        this->questions.push_back(question);
+
+        //Parse the answer section
+        for(int i = 0; i < this->ancount; i++) {
+            AnswerRecord answer;
+
+            printf("Decoding the %ith answer name...\n", i);
+
+            //Decode the name
+            answer.DecodeName(this->data, &p);
+
+            //Copy the type
+            unsigned short answerType;
+            memcpy(&answerType, p, sizeof(short));
+            p += sizeof(short);
+            answerType = SWAP16(answerType);
+            answer.SetType(answerType);
+
+            //Copy the class
+            unsigned short answerClass;
+            memcpy(&answerClass, p, sizeof(answerClass));
+            p += sizeof(answerClass);
+            answerClass = SWAP16(answerClass);
+            answer.SetClass(answerClass);
+
+            //Copy the time to live
+            uint32_t answerTTL;
+            memcpy(&answerTTL, p, sizeof(answerTTL));
+            p += sizeof(answerTTL);
+            answerTTL = SWAP32(answerTTL);
+            answer.SetTTL(answerTTL);
+
+            //Copy the data length
+            unsigned short answer_rdlength;
+            memcpy(&answer_rdlength, p, sizeof(answer_rdlength));
+
+            p += sizeof(answer_rdlength);
+            answer_rdlength = SWAP16(answer_rdlength);
+            answer.SetRecordDataLength(answer_rdlength);
+
+            //CNAME Record
+            if(answerType == TYPE_CNAME) {
+                answer.SetRecordData(answer.DecodeString(this->data, &p));
             }
+
+            //A Record
+            else if(answerType == TYPE_A) {
+
+                //Make sure length is 4 for A records
+                if(answer_rdlength != 4) {
+                    //EXCEPTION! Should always be 4 for an answer of type A (IPv4...)
+                    std::cout << "Error: Type A Records should always have a length of 4" << std::endl;
+                }
+                else {
+                    //Copy the record data
+                    unsigned char * rdata = (unsigned char *)calloc(answer_rdlength, sizeof(char));
+                    memcpy(rdata, p, answer_rdlength);
+                    p += answer_rdlength;
+
+                    answer.SetRecordData(ExtendedRecord::getIPFromBytes(rdata, answer_rdlength));
+                    free(rdata);
+                }
+            }
+
+            this->answers.push_back(answer);
         }
 
-        this->answers.push_back(answer);
-    }
+        //Parse the name server section
+        for(int i = 0; i < this->nscount; i++) {
+            NameServerRecord nameServer;
 
-    //Parse the name server section
-    for(int i = 0; i < this->nscount; i++) {
-        NameServerRecord nameServer;
+            //Decode the name
+            nameServer.DecodeName(this->data, &p);
 
-        //Decode the name
-        nameServer.DecodeName(this->data, &p);
+            //Copy the type
+            unsigned short nameServerType;
+            memcpy(&nameServerType, p, sizeof(short));
+            p += sizeof(short);
+            nameServerType = SWAP16(nameServerType);
+            nameServer.SetType(nameServerType);
 
-        //Copy the type
-        unsigned short nameServerType;
-        memcpy(&nameServerType, p, sizeof(short));
-        p += sizeof(short);
-        nameServerType = SWAP16(nameServerType);
-        nameServer.SetType(nameServerType);
+            //Copy the class
+            unsigned short nameServerClass;
+            memcpy(&nameServerClass, p, sizeof(nameServerClass));
+            p += sizeof(nameServerClass);
+            nameServerClass = SWAP16(nameServerClass);
+            nameServer.SetClass(nameServerClass);
 
-        //Copy the class
-        unsigned short nameServerClass;
-        memcpy(&nameServerClass, p, sizeof(nameServerClass));
-        p += sizeof(nameServerClass);
-        nameServerClass = SWAP16(nameServerClass);
-        nameServer.SetClass(nameServerClass);
+            //Copy the time to live
+            uint32_t nameServerTTL;
+            memcpy(&nameServerTTL, p, sizeof(nameServerTTL));
+            p += sizeof(nameServerTTL);
+            nameServerTTL = SWAP32(nameServerTTL);
+            nameServer.SetTTL(nameServerTTL);
 
-        //Copy the time to live
-        uint32_t nameServerTTL;
-        memcpy(&nameServerTTL, p, sizeof(nameServerTTL));
-        p += sizeof(nameServerTTL);
-        nameServerTTL = SWAP32(nameServerTTL);
-        nameServer.SetTTL(nameServerTTL);
+            //Copy the data length
+            unsigned short nameServer_rdlength;
+            memcpy(&nameServer_rdlength, p, sizeof(nameServer_rdlength));
 
-        //Copy the data length
-        unsigned short nameServer_rdlength;
-        memcpy(&nameServer_rdlength, p, sizeof(nameServer_rdlength));
+            p += sizeof(nameServer_rdlength);
+            nameServer_rdlength = SWAP16(nameServer_rdlength);
+            nameServer.SetRecordDataLength(nameServer_rdlength);
 
-        p += sizeof(nameServer_rdlength);
-        nameServer_rdlength = SWAP16(nameServer_rdlength);
-        nameServer.SetRecordDataLength(nameServer_rdlength);
+            nameServer.SetRecordData(nameServer.DecodeString(this->data, &p));
 
-        nameServer.SetRecordData(nameServer.DecodeString(this->data, &p));
-
-        this->nameServers.push_back(nameServer);
-    }
-
-    //Parse the additional record section
-    for(int i = 0; i < this->arcount; i++) {
-        AdditionalRecord additional;
-
-        //Decode the name
-        additional.DecodeName(this->data, &p);
-
-        //Copy the type
-        unsigned short additionalType;
-        memcpy(&additionalType, p, sizeof(short));
-        p += sizeof(short);
-        additionalType = SWAP16(additionalType);
-        additional.SetType(additionalType);
-
-        //Copy the class
-        unsigned short additionalClass;
-        memcpy(&additionalClass, p, sizeof(additionalClass));
-        p += sizeof(additionalClass);
-        additionalClass = SWAP16(additionalClass);
-        additional.SetClass(additionalClass);
-
-        //Copy the time to live
-        uint32_t additionalTTL;
-        memcpy(&additionalTTL, p, sizeof(additionalTTL));
-        p += sizeof(additionalTTL);
-        additionalTTL = SWAP32(additionalTTL);
-        additional.SetTTL(additionalTTL);
-
-        //Copy the data length
-        unsigned short additional_rdlength;
-        memcpy(&additional_rdlength, p, sizeof(additional_rdlength));
-
-        p += sizeof(additional_rdlength);
-        additional_rdlength = SWAP16(additional_rdlength);
-        additional.SetRecordDataLength(additional_rdlength);
-
-        //CNAME Record
-        if(additionalType == TYPE_CNAME) {
-            additional.SetRecordData(additional.DecodeString(this->data, &p));
+            this->nameServers.push_back(nameServer);
         }
 
-        //A Record
-        else if(additionalType == TYPE_A) {
+        //Parse the additional record section
+        for(int i = 0; i < this->arcount; i++) {
+            AdditionalRecord additional;
 
-            //Make sure length is 4 for A records
-            if(additional_rdlength != 4) {
-                //EXCEPTION! Should always be 4 for an answer of type A (IPv4...)
-                std::cout << "Error: Type A Records should always have a length of 4" << std::endl;
-            }
-            else {
-                //Copy the record data
-                unsigned char * rdata = (unsigned char *)calloc(additional_rdlength, sizeof(char));
-                memcpy(rdata, p, additional_rdlength);
-                p += additional_rdlength;
+            //Decode the name
+            additional.DecodeName(this->data, &p);
 
-                additional.SetRecordData(ExtendedRecord::getIPFromBytes(rdata, additional_rdlength));
-                free(rdata);
+            //Copy the type
+            unsigned short additionalType;
+            memcpy(&additionalType, p, sizeof(short));
+            p += sizeof(short);
+            additionalType = SWAP16(additionalType);
+            additional.SetType(additionalType);
+
+            //Copy the class
+            unsigned short additionalClass;
+            memcpy(&additionalClass, p, sizeof(additionalClass));
+            p += sizeof(additionalClass);
+            additionalClass = SWAP16(additionalClass);
+            additional.SetClass(additionalClass);
+
+            //Copy the time to live
+            uint32_t additionalTTL;
+            memcpy(&additionalTTL, p, sizeof(additionalTTL));
+            p += sizeof(additionalTTL);
+            additionalTTL = SWAP32(additionalTTL);
+            additional.SetTTL(additionalTTL);
+
+            //Copy the data length
+            unsigned short additional_rdlength;
+            memcpy(&additional_rdlength, p, sizeof(additional_rdlength));
+
+            p += sizeof(additional_rdlength);
+            additional_rdlength = SWAP16(additional_rdlength);
+            additional.SetRecordDataLength(additional_rdlength);
+
+            //CNAME Record
+            if(additionalType == TYPE_CNAME) {
+                additional.SetRecordData(additional.DecodeString(this->data, &p));
             }
+
+            //A Record
+            else if(additionalType == TYPE_A) {
+
+                //Make sure length is 4 for A records
+                if(additional_rdlength != 4) {
+                    //EXCEPTION! Should always be 4 for an answer of type A (IPv4...)
+                    std::cout << "Error: Type A Records should always have a length of 4" << std::endl;
+                }
+                else {
+                    //Copy the record data
+                    unsigned char * rdata = (unsigned char *)calloc(additional_rdlength, sizeof(char));
+                    memcpy(rdata, p, additional_rdlength);
+                    p += additional_rdlength;
+
+                    additional.SetRecordData(ExtendedRecord::getIPFromBytes(rdata, additional_rdlength));
+                    free(rdata);
+                }
+            }
+
+            this->additionals.push_back(additional);
         }
-
-        this->additionals.push_back(additional);
     }
 }
 
@@ -276,8 +287,15 @@ DNSPacket::DNSPacket(const DNSPacket & tempPacket) {
     this->additionals = tempPacket.additionals;
 
     this->dataLength = tempPacket.dataLength;
-    this->data = (char *)malloc(tempPacket.dataLength);
-    memcpy(this->data, tempPacket.data, dataLength);
+    if(this->dataLength != 0)
+    {
+        this->data = (char *)malloc(tempPacket.dataLength);
+        memcpy(this->data, tempPacket.data, dataLength);
+    }
+    else
+    {
+        this->data = NULL;
+    }
 }
 
 void DNSPacket::Print(void) {
@@ -439,4 +457,15 @@ void DNSPacket::SwapName(const std::string & n_name) {
 void DNSPacket::UnsetRecursionFlag()
 {
     this->flags &= ~(RD_FLAG);
+}
+
+void DNSPacket::UnsetADFlag()
+{
+    this->flags &= ~0x20;
+}
+
+void DNSPacket::removeAnswerSection()
+{
+    this->arcount = 0;
+    additionals.clear();
 }

@@ -29,6 +29,9 @@ public:
     size_t Size(void);                          //Size of the packet in bytes
     void SwapName(const std::string &);
     void UnsetRecursionFlag();
+    void UnsetADFlag();
+
+    void removeAnswerSection();
 
     //Getters...
     unsigned short GetID(void) { return id; }
