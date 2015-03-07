@@ -29,7 +29,7 @@ public:
     size_t Size(void);                          //Size of the packet in bytes
     void SwapName(const std::string &);
     void UnsetRecursionFlag();
-    void UnsetADFlag();
+    void UnsetZFlags();
 
     void removeAnswerSection();
 

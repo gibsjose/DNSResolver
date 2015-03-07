@@ -266,7 +266,7 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
                     std::cout << "Possible IP: "
                               << ExtendedRecord::getIPFromBytes(p, additional_rdlength)
                               << std::endl;
-                              
+
                     p += additional_rdlength;
                 }
             }
@@ -462,9 +462,9 @@ void DNSPacket::UnsetRecursionFlag()
     this->flags &= ~(RD_FLAG);
 }
 
-void DNSPacket::UnsetADFlag()
+void DNSPacket::UnsetZFlags()
 {
-    this->flags &= ~0x20;
+    this->flags &= ~0x70;
 }
 
 void DNSPacket::removeAnswerSection()

@@ -17,6 +17,7 @@ int main(int argc, char * argv[]) {
             //Wait for client to make a request and store it
             request = resolver.GetClientRequest();
             request.UnsetRecursionFlag();
+            request.UnsetZFlags();  // Clear the Z flag bits (reserver for "future" use <-- "dig" sets these)
         } catch(const Exception & e) {
             std::cerr << "Error: " << e.what() << std::endl;
             continue;
