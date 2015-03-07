@@ -95,10 +95,24 @@ char * ExtendedRecord::GetData(void) {
 
 std::string ExtendedRecord::getIPFromBytes(const char * aBytes, const unsigned short aNumBytes)
 {
-    char * str = (char *)malloc(sizeof(char) * 32);
-    sprintf(str, "%u.%u.%u.%u", static_cast<unsigned>(aBytes[0]), static_cast<unsigned>(aBytes[1]), \
-        static_cast<unsigned>(aBytes[2]), static_cast<unsigned>(aBytes[3]));
-    std::string lStr(str);
-    free(str);
-    return lStr;
+    if(aNumBytes < 4)
+    {
+        return std::string("ERROR");
+    }
+    else
+    {
+        char * str = (char *)malloc(sizeof(char) * 32);
+        str[0] = '\0';
+
+        sprintf(str,
+                "%hu.%hu.%hu.%hu",
+                static_cast<unsigned char>(aBytes[0]),
+                static_cast<unsigned char>(aBytes[1]),
+                static_cast<unsigned char>(aBytes[2]),
+                static_cast<unsigned char>(aBytes[3])
+        );
+        std::string lStr(str);
+        free(str);
+        return lStr;
+    }
 }

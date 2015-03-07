@@ -308,6 +308,12 @@ void DNSResolver::UpdateServer(DNSPacket & response) {
                         response.GetAdditionalSection().at(j).GetRecordData(),
                         response.GetAdditionalSection().at(j).GetRecordDataLength()
                     );
+                    std::cout << "Record data: " <<
+                        response.GetAdditionalSection().at(j).GetRecordData()
+                        << std::endl;
+                    std::cout << "Record data length: " <<
+                        response.GetAdditionalSection().at(j).GetRecordDataLength()
+                        << std::endl;
 
                     std::cout << "Found name server address: " << address << std::endl;
                     break;

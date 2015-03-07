@@ -263,6 +263,10 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
                 else {
                     //Copy the record data
                     additional.SetRecordData(p, additional_rdlength);
+                    std::cout << "Possible IP: "
+                              << ExtendedRecord::getIPFromBytes(p, additional_rdlength)
+                              << std::endl;
+                              
                     p += additional_rdlength;
                 }
             }
