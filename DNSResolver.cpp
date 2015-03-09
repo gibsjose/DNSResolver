@@ -51,11 +51,9 @@ int main(int argc, char * argv[]) {
 
         try {
             flag = 1;
-            std::cout << "@@@@@Attempting to get response from cache..." << std::endl;
             response = *cache.GetPacket(request.GetDomain());
             response.SetID(request.GetID());
             resolver.SendClientResponse(response);
-            std::cout << "@@@@@Response retrieved from cache" << std::endl;
             continue;
         } catch(const Exception e) {
             flag = 0;
