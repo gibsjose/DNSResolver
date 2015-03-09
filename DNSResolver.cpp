@@ -90,7 +90,7 @@ int main(int argc, char * argv[]) {
                                                  response.GetAnswerSection().at(i).GetRecordDataLength());
                         std::cout << "Found CNAME: " << lCNameString << std::endl;
 
-                        request.SwapName(lCNameString);
+                        request = DNSPacket(lCNameString, request.GetID());
 
                         //@TODO Add to cache
                         break;

@@ -1,13 +1,21 @@
 #include "DNSPacket.h"
 
-DNSPacket::DNSPacket(const std::string & name) {
+DNSPacket::DNSPacket(const std::string & name, unsigned short aID) {
     this->data = NULL;
     this->dataLength = 0;
 
-    srand(time(NULL));
+    if(id != 0)
+    {
+        // If the ID is explicitly set, use it.  Otherwise generate a random one.
+        this->id = aID;
+    }
+    else
+    {
+        srand(time(NULL));
 
-    //Create a random ID
-    id = (unsigned short)rand();
+        //Create a random ID
+        id = (unsigned short)rand();
+    }
 
     //Set the flags (enable RD)
     flags = RD_FLAG;

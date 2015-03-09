@@ -13,7 +13,7 @@
 
 class DNSPacket {
 public:
-    DNSPacket(const std::string &);             //Construct a request packet with the domain name (rawName)
+    DNSPacket(const std::string &, unsigned short aID = 0);             //Construct a request packet with the domain name (rawName)
     DNSPacket(const char *, const size_t);      //Construct a response packet with the raw data (data)
     DNSPacket(const DNSPacket &);               //Copy constructor
 
