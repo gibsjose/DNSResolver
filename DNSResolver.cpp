@@ -43,7 +43,7 @@ int main(int argc, char * argv[]) {
         //Response packet
         DNSPacket response((std::string()));
 
-        do {
+        while(true) {
             //Create the server socket based on the configuration (starts at ROOT)
             try {
                 resolver.CreateServerSocket();
@@ -58,6 +58,7 @@ int main(int argc, char * argv[]) {
 
             //Answer received
             if(response.GetAnswerCount()) {
+                bool lBreak = false;
 
                 //Loop through answers looking for Type A (IPv4)
                 for(int i = 0; i < response.GetAnswerCount(); i++) {
@@ -71,42 +72,49 @@ int main(int argc, char * argv[]) {
                             std::cerr << e.what() << std::endl;
                         }
 
+                        //Stop the recursion since an answer was obtained.
+                        lBreak = true;
                         break;
                     }
                 }
 
+                if(lBreak) break;
+
                 //Loop through answers looking for CNAMEs
-                // for(int i = 0; i < response.GetAnswerCount(); i++) {
-                //     if(response.GetAnswerSection().at(i).GetType() == TYPE_CNAME) {
-                //         //Update the request to use the true name (CNAME)
-                //         //...
-                //         //@TODO Add to cache
-                //         break;
-                //     }
-                // }
-            }
+                for(int i = 0; i < response.GetAnswerCount(); i++) {
+                    if(response.GetAnswerSection().at(i).GetType() == TYPE_CNAME) {
+                        //Update the request to use the true name (CNAME)
+                        std::string lCNameString(response.GetAnswerSection().at(i).GetRecordData(),
+                                                 response.GetAnswerSection().at(i).GetRecordDataLength());
+                        std::cout << "Found CNAME: " << lCNameString << std::endl;
 
-            //No answer: send to the next server up
-            else {
-                //Send to a new server (name server/new root)
-                try {
-                    //@TODO Add to cache
-                    resolver.UpdateServer(response);
-                } catch(const Exception &e) {
-                    //Send response back to client
-                    std::cerr << e.what() << std::endl;
+                        request.SwapName(lCNameString);
 
-                    try {
-                        resolver.SendClientResponse(response);
-                    } catch(const Exception & e) {
-                        std::cerr << e.what() << std::endl;
+                        //@TODO Add to cache
+                        break;
                     }
-
-                    break;
                 }
             }
 
-        } while(!response.GetAnswerCount());
+            //No answer: send to the next server up
+            //Send to a new server (name server/new root)
+            try {
+                //@TODO Add to cache
+                resolver.UpdateServer(response);
+            } catch(const Exception &e) {
+                //Send response back to client
+                std::cerr << e.what() << std::endl;
+
+                try {
+                    resolver.SendClientResponse(response);
+                } catch(const Exception & e) {
+                    std::cerr << e.what() << std::endl;
+                }
+
+                break;
+            }
+
+        }
     }
 }
 
