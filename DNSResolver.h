@@ -17,6 +17,7 @@
 #define MAX_INPUT_SIZE  512
 #define DNS_PORT        53
 
+unsigned int rootServerIndex = 0;
 typedef std::vector<std::string> RootServers_t;
 
 class DNSResolver {
