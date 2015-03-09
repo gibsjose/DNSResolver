@@ -11,6 +11,8 @@ int main(int argc, char * argv[]) {
     resolver.CreateClientSocket();
 
     while(1) {
+        resolver.Initialize(argc,argv);
+
         DNSPacket request((std::string()));
 
         try {
@@ -119,6 +121,7 @@ int main(int argc, char * argv[]) {
 }
 
 void DNSResolver::Initialize(int argc, char ** argv) {
+    rootServers.clear();
     //Create root server address array
     rootServers.push_back("198.41.0.4");            //A.ROOT-SERVERS.NET
     rootServers.push_back("192.228.79.201");        //B.ROOT-SERVERS.NET
@@ -264,6 +267,7 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
     int bytesReceived = recvfrom(serverSocket, responseData, MAX_DNS_LEN, 0, (struct sockaddr *)&serverAddress, &addressLength);
 
     if(bytesReceived < 0) {
+        std::cout << strerror(errno) << std::endl;
         throw SocketException("Error receiving bytes from server: recvfrom()");
     }
 
