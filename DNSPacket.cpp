@@ -480,3 +480,10 @@ void DNSPacket::removeAnswerSection()
     this->arcount = 0;
     additionals.clear();
 }
+
+void DNSPacket::setQuestionSection(const std::vector<QuestionRecord> aQuestionRecords)
+{
+    this->questions.clear();
+    this->questions = aQuestionRecords;
+    this->qdcount = this->questions.size();
+}
