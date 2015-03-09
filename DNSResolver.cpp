@@ -14,10 +14,15 @@ int main(int argc, char * argv[]) {
         resolver.Initialize(argc,argv);
 
         DNSPacket request((std::string()));
+        QuestionRecord lOriginalQuestionRecord;
 
         try {
             //Wait for client to make a request and store it
             request = resolver.GetClientRequest();
+            lOriginalQuestionRecord.EncodeName(request.GetQuestionSection()[0].GetRawName());
+            lOriginalQuestionRecord.SetType(request.GetQuestionSection()[0].GetType());
+            lOriginalQuestionRecord.SetClass(request.GetQuestionSection()[0].GetClass());
+
             request.UnsetRecursionFlag();
             request.UnsetZFlags();  // Clear the Z flag bits (reserver for "future" use <-- "dig" sets these)
         } catch(const Exception & e) {
@@ -65,6 +70,14 @@ int main(int argc, char * argv[]) {
                 //Loop through answers looking for Type A (IPv4)
                 for(int i = 0; i < response.GetAnswerCount(); i++) {
                     if(response.GetAnswerSection().at(i).GetType() == TYPE_A) {
+                        // Replace the question section of the current response packet with the original question section
+                        // that the client provided in its initial request.  This needs to be done because a new
+                        // request packet is constructed when a CNAME record is encountered and therefore the question
+                        // section is changed in the final response packet that we want to send back to the client.
+                        std::vector<QuestionRecord> lQuestionRecords;
+                        lQuestionRecords.push_back(lOriginalQuestionRecord);
+                        response.setQuestionSection(lQuestionRecords);
+
                         //@TODO Add to cache
 
                         //Forward packet to client

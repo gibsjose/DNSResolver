@@ -32,6 +32,7 @@ public:
     void UnsetZFlags();
 
     void removeAnswerSection();
+    void setQuestionSection(const std::vector<QuestionRecord> aQuestionRecords);
 
     //Getters...
     unsigned short GetID(void) { return id; }
