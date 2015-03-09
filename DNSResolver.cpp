@@ -1,7 +1,9 @@
 #include "DNSResolver.h"
 
+
 int main(int argc, char * argv[]) {
     DNSResolver resolver;
+    DNSCache cache;
 
     //Set the root servers for the resolver and
     // intitialize the config parser
@@ -29,21 +31,26 @@ int main(int argc, char * argv[]) {
         std::cout << "Request:\n-----------------------\n" << std::endl;
         request.Print();
 
-        //DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
-        //std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
-        //std::string & cache.GetAlias(string)    //ex: www.facebook.com --> ns1.cr0.facebook.com
-        //void cache.AddPacket(string key, DNSPacket &)
-        //void cache.AddAddress(key string, value string, uint32_t ttl);
-        //void cache.AddAlias(key string, value string, uint32_t ttl);
-
-        //@TODO CHECK CACHE
-        // if(cache.PacketExists(request) != NULL) {
-        //     resolver.SendClientResponse(request);
-        //     continue;
-        // } // ... same for address and alias
+        // DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
+        // std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
+        // std::string & cache.GetAlias(string)    //ex: www.facebook.com --> ns1.cr0.facebook.com
+        // void cache.AddPacket(string key, DNSPacket &)
+        // void cache.AddAddress(key string, value string, uint32_t ttl);
+        // void cache.AddAlias(key string, value string, uint32_t ttl);
 
         //Response packet
         DNSPacket response((std::string()));
+
+        //@TODO CHECK CACHE
+        try {
+            response = *cache.GetPacket(request.GetDomain());
+            resolver.SendClientResponse(response);
+            std::cout << "Response retrieved from cache" << std::endl;
+            continue;
+        } catch(const Exception e) {
+
+        }
+
 
         while(true) {
             //Create the server socket based on the configuration (starts at ROOT)
@@ -66,7 +73,7 @@ int main(int argc, char * argv[]) {
                 for(int i = 0; i < response.GetAnswerCount(); i++) {
                     if(response.GetAnswerSection().at(i).GetType() == TYPE_A) {
                         //@TODO Add to cache
-
+                        cache.AddPacket(response.GetDomain(), response);
                         //Forward packet to client
                         try {
                             resolver.SendClientResponse(response);

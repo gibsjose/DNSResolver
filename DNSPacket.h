@@ -40,6 +40,7 @@ public:
     unsigned short GetAnswerCount(void) { return ancount; }
     unsigned short GetNameServerCount(void) { return nscount; }
     unsigned short GetAdditionalRecordCount(void) { return arcount; }
+    const std::string & GetDomain(void) const { return questions[0].GetRawName(); }
     const std::vector<QuestionRecord> & GetQuestionSection(void) const { return questions; }
     const std::vector<AnswerRecord> & GetAnswerSection(void) const { return answers; }
     const std::vector<NameServerRecord> & GetNameServerSection(void) const { return nameServers; }

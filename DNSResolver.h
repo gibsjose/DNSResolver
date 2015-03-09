@@ -12,6 +12,7 @@
 #include "DNSPacket.h"
 #include "ConfigManager.hpp"
 #include "Exception.h"
+#include "DNSCache.hpp"
 
 #define MAX_DNS_LEN     (1024 * 64)
 #define MAX_INPUT_SIZE  512
