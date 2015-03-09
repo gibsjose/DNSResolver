@@ -30,7 +30,7 @@ public:
     time_t mTTL;
 };
 
-typedef std::map<std::string, DNSPacket *> PacketMap_t;
+typedef std::map<std::string, PacketNode *> PacketMap_t;
 typedef std::map<std::string, StringNode *> StringMap_t;
 
 class DNSCache

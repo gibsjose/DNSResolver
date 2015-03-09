@@ -47,6 +47,8 @@ public:
     const std::vector<NameServerRecord> & GetNameServerSection(void) const { return nameServers; }
     const std::vector<AdditionalRecord> & GetAdditionalSection(void) const { return additionals; }
 
+    void SetID(unsigned short nid) { this->id = nid; }
+
 private:
     unsigned short id;
     unsigned short flags;

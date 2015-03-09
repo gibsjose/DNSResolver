@@ -49,8 +49,11 @@ void DNSCache::AddPacket(const std::string & aDomain, const DNSPacket & aPacket)
         mPacketCache.erase(lIter);
     }
 
+    std::cout << "@@@@NODE TTL: " << lPacketNode->mTTL << std::endl;
+
     //Put the cache element in the map.
-    mPacketCache[aDomain] = lPacketNode->mPacket;
+    //mPacketCache[aDomain] = lPacketNode->mPacket;
+    mPacketCache[aDomain] = lPacketNode;
 }
 
 //Find the minimum TTL in the answers, name servers and additional records.
@@ -151,18 +154,20 @@ DNSPacket * DNSCache::GetPacket(const std::string & aDomain) const
     PacketMap_t::const_iterator lIter = mPacketCache.find(aDomain);
     if(lIter == mPacketCache.end())
     {
+        std::cout << "Item not in packet" << std::endl;
         throw GeneralException("Item not in packet cache: " + aDomain);
     }
     else
     {
         //There is a candidate packet, but return it only if it has a TTL equal
         //to or greater than now.
-        if(time(NULL) <= this->getMinTTLFromPacket(*(lIter->second)))
+        if(time(NULL) <= lIter->second->mTTL)
         {
-            return lIter->second;
+            return lIter->second->mPacket;
         }
         else
         {
+            std::cout << "TTL Expired" << std::endl;
             throw TTLExpiredException("The TTL has expired for packet: " + aDomain);
         }
     }

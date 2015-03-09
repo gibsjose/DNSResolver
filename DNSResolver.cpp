@@ -11,13 +11,15 @@ int main(int argc, char * argv[]) {
 
     //Create the client socket
     resolver.CreateClientSocket();
-
+    DNSPacket request((std::string()));
+    int flag = 1;
     while(1) {
+
         resolver.Initialize(argc,argv);
-
-        DNSPacket request((std::string()));
+        if(flag != 1) {
+            DNSPacket request((std::string()));
+        }
         QuestionRecord lOriginalQuestionRecord;
-
         try {
             //Wait for client to make a request and store it
             request = resolver.GetClientRequest();
@@ -34,7 +36,7 @@ int main(int argc, char * argv[]) {
 
         //DEBUG
         std::cout << "Request:\n-----------------------\n" << std::endl;
-        request.Print();
+        // request.Print();
 
         // DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
         // std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
@@ -45,15 +47,18 @@ int main(int argc, char * argv[]) {
 
         //Response packet
         DNSPacket response((std::string()));
-
         //@TODO CHECK CACHE
+
         try {
+            flag = 1;
+            std::cout << "@@@@@Attempting to get response from cache..." << std::endl;
             response = *cache.GetPacket(request.GetDomain());
+            response.SetID(request.GetID());
             resolver.SendClientResponse(response);
-            std::cout << "Response retrieved from cache" << std::endl;
+            std::cout << "@@@@@Response retrieved from cache" << std::endl;
             continue;
         } catch(const Exception e) {
-
+            flag = 0;
         }
 
 
@@ -68,7 +73,7 @@ int main(int argc, char * argv[]) {
             }
 
             std::cout << "RESPONSE FROM SERVER:\n------------------------\n" << std::endl;
-            response.Print();
+            // response.Print();
 
             //Answer received
             if(response.GetAnswerCount()) {
@@ -309,7 +314,7 @@ void DNSResolver::SendClientResponse(DNSPacket & response) {
     //DEBUG
     std::cout << "Sending client response...\n" << std::endl;
 
-    response.Print();
+    // response.Print();
 
     char * responseData = response.GetData();
 
