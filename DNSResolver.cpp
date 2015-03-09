@@ -121,6 +121,7 @@ int main(int argc, char * argv[]) {
 }
 
 void DNSResolver::Initialize(int argc, char ** argv) {
+    rootServerIndex = 0;
     rootServers.clear();
     //Create root server address array
     rootServers.push_back("198.41.0.4");            //A.ROOT-SERVERS.NET
@@ -302,7 +303,6 @@ void DNSResolver::SendClientResponse(DNSPacket & response) {
 }
 
 void DNSResolver::UpdateServer(DNSPacket & response) {
-    static unsigned int rootServerIndex = 0;
 
     //Check for name servers
     if(response.GetNameServerCount()) {
