@@ -8,11 +8,10 @@
 
 class ExtendedRecord : public Record {
 public:
-    ExtendedRecord(void) {
+    ExtendedRecord(void) : Record(){
         this->ttl = 0;
         this->rdlength = 0;
         this->rdata = nullptr;
-        // printf("ExtendedRecord: this->rdata: %p\n", this->rdata);
     }
 
     // ~ExtendedRecord(void)
