@@ -8,19 +8,22 @@ void Record::EncodeName(void) {
     name = (char *)calloc(rawName.size() + 1, sizeof(char));
     char * p = name;
 
-    for(int i = 0; i < tokens.size(); i++) {
-        std::string & token = tokens.at(i);
-        oss << token.size();
-        oss << token;
+    if(rawName.size() > 0)
+    {
+        for(int i = 0; i < tokens.size(); i++) {
+            std::string & token = tokens.at(i);
+            oss << token.size();
+            oss << token;
 
-        //Copy the size of the token (as an unsigned char)
-        unsigned char l = (unsigned char)token.size();
-        memcpy(p, &l, sizeof(char));
-        p += sizeof(char);
+            //Copy the size of the token (as an unsigned char)
+            unsigned char l = (unsigned char)token.size();
+            memcpy(p, &l, sizeof(char));
+            p += sizeof(char);
 
-        //Copy the actual token (minus the NULL byte)
-        memcpy(p, token.c_str(), token.size());
-        p += token.size();
+            //Copy the actual token (minus the NULL byte)
+            memcpy(p, token.c_str(), token.size());
+            p += token.size();
+        }
     }
 
     oss << "0";
