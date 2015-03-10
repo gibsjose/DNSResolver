@@ -221,7 +221,6 @@ DNSPacket DNSResolver::GetClientRequest(void) {
         {
             //The socket timed out from reading data since it is a non-blocking read attempt.
             //Another attempt has to be made.
-            std::cout << "Socket timeout; receiving again.." << std::endl;
             continue;
         }
         else if(bytesReceived < 0) {
