@@ -114,8 +114,6 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
         for(int i = 0; i < this->ancount; i++) {
             AnswerRecord answer;
 
-            printf("Decoding the %ith answer name...\n", i);
-
             //Decode the name
             answer.DecodeName(this->data, &p);
 
@@ -151,7 +149,9 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
             //CNAME Record
             if(answerType == TYPE_CNAME) {
                 std::string lString = answer.DecodeString(this->data, &p);
-                answer.SetRecordData(lString.c_str(), lString.size());
+                char * x = answer.EncodeString(lString);
+                answer.SetRecordData(x, strlen(x) + 1);
+                free(x);
             }
 
             //A Record
@@ -213,7 +213,9 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
             nameServer.SetRecordDataLength(nameServer_rdlength);
 
             std::string lString = nameServer.DecodeString(this->data, &p);
-            nameServer.SetRecordData(lString.c_str(), lString.size());
+            char * x = nameServer.EncodeString(lString);
+            nameServer.SetRecordData(x, strlen(x) + 1);
+            free(x);
 
             this->nameServers.push_back(nameServer);
         }
@@ -257,7 +259,9 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
             //CNAME Record
             if(additionalType == TYPE_CNAME) {
                 std::string lString = additional.DecodeString(this->data, &p);
-                additional.SetRecordData(lString.c_str(), lString.size());
+                char * x = additional.EncodeString(lString);
+                additional.SetRecordData(x, strlen(x) + 1);
+                free(x);
             }
 
             //A Record

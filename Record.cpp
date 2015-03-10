@@ -50,6 +50,36 @@ void Record::EncodeName(const std::string & rawName) {
     this->EncodeName();
 }
 
+char * Record::EncodeString(const std::string & aString) const
+{
+    //Convert from www.google.com to (00000011)www(00000110)google(00000011)com(00000000)
+    std::vector<std::string> tokens = StringUtilities::SplitString(aString, ".");
+
+    //Allocate bytes for name (calloc to clear)
+    char * myString = (char *)calloc(aString.size() + 1, sizeof(char));
+    char * p = myString;
+
+    for(int i = 0; i < tokens.size(); i++) {
+        //Copy the size of the token (as an unsigned char)
+        unsigned char l = (unsigned char)tokens[i].size();
+        memcpy(p, &l, sizeof(char));
+        p += sizeof(char);
+
+        //Copy the actual token (minus the NULL byte)
+        memcpy(p, tokens[i].c_str(), tokens[i].size());
+        p += tokens[i].size();
+    }
+
+    //Terminate with a '0'
+    unsigned char l = 0;
+    memcpy(p, &l, sizeof(char));
+
+    // printf("Encoded string: %s\n", myString);
+    // printf("strlen(): %lu\n", strlen(myString));
+
+    return myString;
+}
+
 std::string Record::DecodeString(const char * data, const char ** name) {
     //Convert between (00000011)www(00000110)google(00000011)com(00000000) and www.google.com
     unsigned int len = strlen(*name);

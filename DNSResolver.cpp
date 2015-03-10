@@ -36,7 +36,7 @@ int main(int argc, char * argv[]) {
 
         //DEBUG
         std::cout << "Request:\n-----------------------\n" << std::endl;
-        // request.Print();
+        request.Print();
 
         // DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
         // std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
@@ -71,7 +71,7 @@ int main(int argc, char * argv[]) {
             }
 
             std::cout << "RESPONSE FROM SERVER:\n------------------------\n" << std::endl;
-            // response.Print();
+            response.Print();
 
             //Answer received
             if(response.GetAnswerCount()) {
@@ -111,7 +111,6 @@ int main(int argc, char * argv[]) {
                         //Update the request to use the true name (CNAME)
                         std::string lCNameString(response.GetAnswerSection().at(i).GetRecordData(),
                                                  response.GetAnswerSection().at(i).GetRecordDataLength());
-                        std::cout << "Found CNAME: " << lCNameString << std::endl;
 
                         request = DNSPacket(lCNameString, request.GetID());
 
@@ -335,23 +334,21 @@ void DNSResolver::UpdateServer(DNSPacket & response) {
         for(int i = 0; i < response.GetNameServerCount(); i++ ) {
             nameServer = std::string(response.GetNameServerSection().at(i).GetRecordData(),
                                      response.GetNameServerSection().at(i).GetRecordDataLength());
-            std::cout << "Nameserver: '" << nameServer << "'." << std::endl;
+            nameServer.erase(nameServer.size() - 1);
+            std::cout << "Nameserver: " << nameServer << " Length: " << nameServer.size() << std::endl;
 
             //Look up the IP of the name server in the additional records
             for(int j = 0; j < response.GetAdditionalRecordCount(); j++) {
-                if(nameServer == response.GetAdditionalSection().at(j).GetRawName()) {
+                std::string lRawName = response.GetAdditionalSection().at(j).GetRawName();
+                lRawName = response.GetAdditionalSection().at(j).EncodeString(lRawName);
+                std::cout << "RawName: " << lRawName << " Length: " << lRawName.size() << std::endl;
+
+                if(nameServer == lRawName) {
                     address = ExtendedRecord::getIPFromBytes(
                         response.GetAdditionalSection().at(j).GetRecordData(),
                         response.GetAdditionalSection().at(j).GetRecordDataLength()
                     );
-                    std::cout << "Record data: " <<
-                        response.GetAdditionalSection().at(j).GetRecordData()
-                        << std::endl;
-                    std::cout << "Record data length: " <<
-                        response.GetAdditionalSection().at(j).GetRecordDataLength()
-                        << std::endl;
 
-                    std::cout << "Found name server address: " << address << std::endl;
                     break;
                 } else {
                     address.clear();

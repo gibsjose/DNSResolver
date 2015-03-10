@@ -88,14 +88,20 @@ char * ExtendedRecord::GetData(void) {
     p += sizeof(rdlength);
 
     if(this->rdlength > 0 && this->rdata != nullptr)
+    {
         memcpy(p, this->rdata, this->rdlength);
+    }
+    else
+    {
+        std::cout << "Skipping memcpy() for ExtendedRecord::GetData()." << std::endl;
+    }
 
     return data;
 }
 
 std::string ExtendedRecord::getIPFromBytes(const char * aBytes, const unsigned short aNumBytes)
 {
-    if(aNumBytes < 4)
+    if(aNumBytes != 4)
     {
         return std::string("ERROR");
     }
