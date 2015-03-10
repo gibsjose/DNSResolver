@@ -45,7 +45,7 @@ public:
     void AddAlias(const std::string &, const std::string &, uint32_t);
 
     //Get the raw cached packet
-    DNSPacket * GetPacket(const std::string &) const;
+    DNSPacket * GetPacket(const std::string &);
     std::string & GetAddress(const std::string & ) const;
     std::string & GetAlias(const std::string & ) const;
 

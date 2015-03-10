@@ -49,7 +49,7 @@ void DNSCache::AddPacket(const std::string & aDomain, const DNSPacket & aPacket)
         mPacketCache.erase(lIter);
     }
 
-    std::cout << "@@@@NODE TTL: " << lPacketNode->mTTL << std::endl;
+    //std::cout << "@@@@NODE TTL: " << lPacketNode->mTTL << std::endl;
 
     //Put the cache element in the map.
     //mPacketCache[aDomain] = lPacketNode->mPacket;
@@ -149,7 +149,7 @@ void DNSCache::AddAlias(const std::string & aAlias, const std::string & aName, u
 
 
 //Get the raw cached packet
-DNSPacket * DNSCache::GetPacket(const std::string & aDomain) const
+DNSPacket * DNSCache::GetPacket(const std::string & aDomain)
 {
     PacketMap_t::const_iterator lIter = mPacketCache.find(aDomain);
     if(lIter == mPacketCache.end())
@@ -167,6 +167,7 @@ DNSPacket * DNSCache::GetPacket(const std::string & aDomain) const
         }
         else
         {
+            mPacketCache.erase(lIter);
             std::cout << "TTL Expired" << std::endl;
             throw TTLExpiredException("The TTL has expired for packet: " + aDomain);
         }

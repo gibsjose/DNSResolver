@@ -51,6 +51,7 @@ int main(int argc, char * argv[]) {
 
         try {
             flag = 1;
+            cache.Print();
             response = *cache.GetPacket(request.GetDomain());
             response.SetID(request.GetID());
             resolver.SendClientResponse(response);
@@ -133,6 +134,7 @@ int main(int argc, char * argv[]) {
                 std::cerr << e.what() << std::endl;
 
                 try {
+                    cache.Print();
                     resolver.SendClientResponse(response);
                 } catch(const Exception & e) {
                     std::cerr << e.what() << std::endl;
