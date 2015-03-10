@@ -216,3 +216,13 @@ std::string & DNSCache::GetAlias(const std::string & aAlias) const
         }
     }
 }
+
+void DNSCache::Print(void)
+{
+    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Printing the cache..." << std::endl;
+    PacketMap_t::const_iterator it;
+    for (it = mPacketCache.begin(); it != mPacketCache.end(); it++) {
+        std::cout << "Domain: " << it->first << std::endl;
+        std::cout << "TTL: " << it->second->mTTL << std::endl;
+    }
+}

@@ -48,6 +48,8 @@ public:
     DNSPacket * GetPacket(const std::string &) const;
     std::string & GetAddress(const std::string & ) const;
     std::string & GetAlias(const std::string & ) const;
+
+    void Print(void);
 private:
     uint32_t getMinTTLFromPacket(const DNSPacket &) const;
 
