@@ -5,7 +5,7 @@ void Record::EncodeName(void) {
     std::ostringstream oss;
 
     //Allocate bytes for name (calloc to clear)
-    name = (char *)calloc(rawName.size() + 1, sizeof(char));
+    name = (char *)calloc(rawName.size() + 2, sizeof(char));
     char * p = name;
 
     if(rawName.size() > 0)

@@ -250,8 +250,6 @@ void DNSResolver::CreateServerSocket(void) {
     //Create a socket for the server
     serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
-    std::cout << "Server socket assigned: " << serverSocket << std::endl;
-
     //5 second timeout
     struct timeval to;
     to.tv_sec = 5;
@@ -267,8 +265,6 @@ void DNSResolver::CreateServerSocket(void) {
     serverAddress.sin_addr.s_addr = inet_addr(serverIP.c_str());
 
     //DEBUG
-    std::cout << "serverSocket = " << serverSocket << std::endl;
-    std::cout << "serverPort = " << serverPort << std::endl;
     std::cout << "serverIP = " << serverIP << std::endl;
 }
 
@@ -276,8 +272,6 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
     char * requestData = request.GetData();
 
     int bytesSent = 0;
-
-    std::cout << "Sending to DNS server on socket (" << serverSocket << ")." << std::endl;
 
     bytesSent = sendto(serverSocket, requestData, request.Size(), 0, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
 
@@ -287,8 +281,6 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
 
     char responseData[MAX_DNS_LEN];
     memset(&responseData, 0, MAX_DNS_LEN);
-
-    std::cout << "Receiving from DNS server on socket (" << serverSocket << ")." << std::endl;
 
     unsigned int addressLength = sizeof(serverAddress);
     int bytesReceived = recvfrom(serverSocket, responseData, MAX_DNS_LEN, 0, (struct sockaddr *)&serverAddress, &addressLength);
@@ -339,13 +331,11 @@ void DNSResolver::UpdateServer(DNSPacket & response) {
             nameServer = std::string(response.GetNameServerSection().at(i).GetRecordData(),
                                      response.GetNameServerSection().at(i).GetRecordDataLength());
             nameServer.erase(nameServer.size() - 1);
-            std::cout << "Nameserver: " << nameServer << " Length: " << nameServer.size() << std::endl;
 
             //Look up the IP of the name server in the additional records
             for(int j = 0; j < response.GetAdditionalRecordCount(); j++) {
                 std::string lRawName = response.GetAdditionalSection().at(j).GetRawName();
                 lRawName = response.GetAdditionalSection().at(j).EncodeString(lRawName);
-                std::cout << "RawName: " << lRawName << " Length: " << lRawName.size() << std::endl;
 
                 if(nameServer == lRawName) {
                     address = ExtendedRecord::getIPFromBytes(
