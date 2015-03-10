@@ -35,8 +35,8 @@ int main(int argc, char * argv[]) {
         }
 
         //DEBUG
-        std::cout << "Request:\n-----------------------\n" << std::endl;
-        request.Print();
+        // std::cout << "Request:\n-----------------------\n" << std::endl;
+        // request.Print();
 
         // DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
         // std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
@@ -71,8 +71,8 @@ int main(int argc, char * argv[]) {
                 exit(-1);
             }
 
-            std::cout << "RESPONSE FROM SERVER:\n------------------------\n" << std::endl;
-            response.Print();
+            // std::cout << "RESPONSE FROM SERVER:\n------------------------\n" << std::endl;
+            // response.Print();
 
             //Answer received
             if(response.GetAnswerCount()) {
@@ -265,7 +265,7 @@ void DNSResolver::CreateServerSocket(void) {
     serverAddress.sin_addr.s_addr = inet_addr(serverIP.c_str());
 
     //DEBUG
-    std::cout << "serverIP = " << serverIP << std::endl;
+    std::cout << "Querying server IP: " << serverIP << std::endl;
 }
 
 DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {

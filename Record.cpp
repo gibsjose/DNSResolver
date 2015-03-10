@@ -46,7 +46,7 @@ char * Record::EncodeString(const std::string & aString) const
     std::vector<std::string> tokens = StringUtilities::SplitString(aString, ".");
 
     //Allocate bytes for name (calloc to clear)
-    char * myString = (char *)calloc(aString.size() + 1, sizeof(char));
+    char * myString = (char *)calloc(aString.size() + 2, sizeof(char));
     char * p = myString;
 
     for(int i = 0; i < tokens.size(); i++) {
