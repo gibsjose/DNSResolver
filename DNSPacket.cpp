@@ -4,7 +4,7 @@ DNSPacket::DNSPacket(const std::string & name, unsigned short aID) {
     this->data = NULL;
     this->dataLength = 0;
 
-    if(id != 0)
+    if(aID != 0)
     {
         // If the ID is explicitly set, use it.  Otherwise generate a random one.
         this->id = aID;
@@ -214,6 +214,8 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
 
             std::string lString = nameServer.DecodeString(this->data, &p);
             char * x = nameServer.EncodeString(lString);
+            // std::cout << "Name server data: " << lString << " size(): " << lString.size() << std::endl;
+            // std::cout << "Name server data (x): " << x << " strlen(): " << strlen(x) << std::endl;
             nameServer.SetRecordData(x, strlen(x) + 1);
             free(x);
 
@@ -275,10 +277,6 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
                 else {
                     //Copy the record data
                     additional.SetRecordData(p, additional_rdlength);
-                    std::cout << "Possible IP: "
-                              << ExtendedRecord::getIPFromBytes(p, additional_rdlength)
-                              << std::endl;
-
                     p += additional_rdlength;
                 }
             }

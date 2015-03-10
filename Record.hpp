@@ -65,7 +65,7 @@ public:
     void EncodeName(const std::string &);
     char * EncodeString(const std::string & aString) const;
 
-    std::string DecodeString(const char *, const char **);
+    static std::string DecodeString(const char *, const char **);
     void DecodeName(const char *, const char **);
 
 
