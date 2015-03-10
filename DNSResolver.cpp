@@ -109,9 +109,12 @@ int main(int argc, char * argv[]) {
                 for(int i = 0; i < response.GetAnswerCount(); i++) {
                     if(response.GetAnswerSection().at(i).GetType() == TYPE_CNAME) {
                         //Update the request to use the true name (CNAME)
-                        std::string lCNameString(response.GetAnswerSection().at(i).GetRecordData(),
-                                                 response.GetAnswerSection().at(i).GetRecordDataLength());
-
+                        const char * lRecordData = response.GetAnswerSection().at(i).GetRecordData();
+                        // std::string lCNameString(response.GetAnswerSection().at(i).GetRecordData(),
+                        //                          response.GetAnswerSection().at(i).GetRecordDataLength());
+                        // lCNameString.erase(lCNameString.size() - 1);
+                        std::string lCNameString = Record::DecodeString(lRecordData, &lRecordData);
+                        std::cout << "CNAME: " << lCNameString << std::endl;
                         request = DNSPacket(lCNameString, request.GetID());
 
                         //@TODO Add to cache
