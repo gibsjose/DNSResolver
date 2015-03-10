@@ -17,12 +17,8 @@ void ExtendedRecord::Print(void) {
         }
         else
         {
-            // char * str = (char*) malloc(sizeof(char) * (rdlength + 2));
-            // memcpy(str, rdata, rdlength);
-            // str[rdlength] = '\0';
             char * tempData = rdata;
             std::cout << Record::DecodeString(tempData, const_cast<const char **>(&tempData));
-            // free(str);
         }
     }
     else
