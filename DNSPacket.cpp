@@ -212,12 +212,13 @@ DNSPacket::DNSPacket(const char * data, const size_t length) {
             nameServer_rdlength = SWAP16(nameServer_rdlength);
             nameServer.SetRecordDataLength(nameServer_rdlength);
 
-            std::string lString = nameServer.DecodeString(this->data, &p);
-            char * x = nameServer.EncodeString(lString);
+            // std::string lString = nameServer.DecodeString(this->data, &p);
+            // char * x = nameServer.EncodeString(lString);
             // std::cout << "Name server data: " << lString << " size(): " << lString.size() << std::endl;
             // std::cout << "Name server data (x): " << x << " strlen(): " << strlen(x) << std::endl;
-            nameServer.SetRecordData(x, strlen(x) + 1);
-            free(x);
+            nameServer.SetRecordData(p, nameServer_rdlength);
+            // free(x);
+            p += nameServer_rdlength;
 
             this->nameServers.push_back(nameServer);
         }
@@ -303,7 +304,7 @@ DNSPacket::DNSPacket(const DNSPacket & tempPacket) {
     if(this->dataLength != 0)
     {
         this->data = (char *)malloc(tempPacket.dataLength);
-        memcpy(this->data, tempPacket.data, dataLength);
+        memcpy(this->data, tempPacket.data, tempPacket.dataLength);
     }
     else
     {

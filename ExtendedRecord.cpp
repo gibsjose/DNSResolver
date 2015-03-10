@@ -15,10 +15,14 @@ void ExtendedRecord::Print(void) {
         {
             std::cout << ExtendedRecord::getIPFromBytes(rdata, rdlength);
         }
-        else
+        else if(recordType == TYPE_CNAME)
         {
             char * tempData = rdata;
             std::cout << Record::DecodeString(tempData, const_cast<const char **>(&tempData));
+        }
+        else
+        {
+            std::cout << "[Unprintable]";
         }
     }
     else
