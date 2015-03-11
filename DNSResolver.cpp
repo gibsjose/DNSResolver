@@ -13,13 +13,19 @@ int main(int argc, char * argv[]) {
     resolver.CreateClientSocket();
     DNSPacket request((std::string()));
     int flag = 1;
-    while(1) {
+    while(true) {
 
-        resolver.Initialize(argc,argv);
+        //Initialize server IP back to first ROOT server
+        resolver.Reset();
+
+        std::cout << std::endl;
+
         if(flag != 1) {
             DNSPacket request((std::string()));
         }
+
         QuestionRecord lOriginalQuestionRecord;
+
         try {
             //Wait for client to make a request and store it
             request = resolver.GetClientRequest();
@@ -38,17 +44,10 @@ int main(int argc, char * argv[]) {
         // std::cout << "Request:\n-----------------------\n" << std::endl;
         // request.Print();
 
-        // DNSPacket * cache.GetPacket(string)   //ex: www.facebook.com  --> Response Packet
-        // std::string & cache.GetAddress(string)  //ex: ns1.cr0.facebook.com --> x.x.x.x
-        // std::string & cache.GetAlias(string)    //ex: www.facebook.com --> ns1.cr0.facebook.com
-        // void cache.AddPacket(string key, DNSPacket &)
-        // void cache.AddAddress(key string, value string, uint32_t ttl);
-        // void cache.AddAlias(key string, value string, uint32_t ttl);
-
         //Response packet
         DNSPacket response((std::string()));
-        //@TODO CHECK CACHE
 
+        //Check packet cache
         try {
             flag = 1;
             cache.Print();
@@ -59,7 +58,6 @@ int main(int argc, char * argv[]) {
         } catch(const Exception e) {
             flag = 0;
         }
-
 
         while(true) {
             //Create the server socket based on the configuration (starts at ROOT)
@@ -81,6 +79,7 @@ int main(int argc, char * argv[]) {
                 //Loop through answers looking for Type A (IPv4)
                 for(int i = 0; i < response.GetAnswerCount(); i++) {
                     if(response.GetAnswerSection().at(i).GetType() == TYPE_A) {
+
                         // Replace the question section of the current response packet with the original question section
                         // that the client provided in its initial request.  This needs to be done because a new
                         // request packet is constructed when a CNAME record is encountered and therefore the question
@@ -89,8 +88,9 @@ int main(int argc, char * argv[]) {
                         lQuestionRecords.push_back(lOriginalQuestionRecord);
                         response.setQuestionSection(lQuestionRecords);
 
-                        //@TODO Add to cache
+                        //Add to cache
                         cache.AddPacket(response.GetDomain(), response);
+
                         //Forward packet to client
                         try {
                             resolver.SendClientResponse(response);
@@ -180,8 +180,12 @@ void DNSResolver::Initialize(int argc, char ** argv) {
     clientPort = configManager.getListeningPort();
 }
 
-void DNSResolver::CreateClientSocket(void) {
+void DNSResolver::Reset(void) {
+    //Initialize to first ROOT server
+    serverIP = rootServers.at(0);
+}
 
+void DNSResolver::CreateClientSocket(void) {
     //Create a socket for the client
     clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -230,10 +234,9 @@ DNSPacket DNSResolver::GetClientRequest(void) {
         }
         else
         {
-            // DEBUG
-            std::cout << "Received " << bytesReceived << " byte request from client." << std::endl;
-
             DNSPacket request(data, bytesReceived);
+
+            std::cout << "Received client request (" << bytesReceived << " bytes) for \"" << request.GetDomain() << "\"" << std::endl;
 
             // For some reason "dig" sends extra data in the Answer Section when it makes a DNS request.
             // Since if this extra data is sent as-is to the root DNS server a response is obtained saying
@@ -265,7 +268,7 @@ void DNSResolver::CreateServerSocket(void) {
     serverAddress.sin_addr.s_addr = inet_addr(serverIP.c_str());
 
     //DEBUG
-    std::cout << "Querying server IP: " << serverIP << std::endl;
+    std::cout << "--> Querying server IP: " << serverIP << std::endl;
 }
 
 DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
@@ -305,7 +308,7 @@ DNSPacket DNSResolver::SendServerRequest(DNSPacket & request) {
 void DNSResolver::SendClientResponse(DNSPacket & response) {
 
     //DEBUG
-    std::cout << "Sending client response...\n" << std::endl;
+    std::cout << "--> Sending client response...\n" << std::endl;
 
     // response.Print();
 

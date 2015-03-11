@@ -50,6 +50,7 @@ public:
     void SetID(unsigned short nid) { this->id = nid; }
 
 private:
+    //bool invalid;
     unsigned short id;
     unsigned short flags;
     unsigned short qdcount;

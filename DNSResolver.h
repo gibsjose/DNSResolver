@@ -18,17 +18,18 @@
 #define MAX_INPUT_SIZE  512
 #define DNS_PORT        53
 
-unsigned int rootServerIndex = 0;
 typedef std::vector<std::string> RootServers_t;
 
 class DNSResolver {
 public:
     DNSResolver(void) {
+        rootServerIndex = 0;
         rootServers.clear();
         domain.clear();
     }
 
     void Initialize(int, char **);
+    void Reset(void);
     void CreateClientSocket(void);
     DNSPacket GetClientRequest(void);
     void CreateServerSocket(void);
@@ -61,6 +62,7 @@ public:
 private:
     ConfigManager configManager;
     RootServers_t rootServers;
+    unsigned int rootServerIndex;
     std::string domain;
 
     unsigned clientPort;                    //Client port
