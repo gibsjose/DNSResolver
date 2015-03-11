@@ -35,7 +35,7 @@ public:
     void CreateServerSocket(void);
     DNSPacket SendServerRequest(DNSPacket & request);
     void SendClientResponse(DNSPacket & response);
-    void UpdateServer(DNSPacket & response);
+    void UpdateServer(DNSPacket & response, DNSCache & cache);
 
 
     std::string & GetDomain(void) { return domain; }

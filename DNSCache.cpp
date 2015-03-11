@@ -181,6 +181,7 @@ std::string & DNSCache::GetAddress(const std::string & aName) const
     StringMap_t::const_iterator lIter = mAddressCache.find(aName);
     if(lIter == mAddressCache.end())
     {
+        std::cout << ">>>> ADDRESS NOT IN CACHE <<<<" << std::endl;
         throw GeneralException("Item not in address cache: " + aName);
     }
     else
@@ -189,10 +190,14 @@ std::string & DNSCache::GetAddress(const std::string & aName) const
         //to or greater than now.
         if(time(NULL) <= lIter->second->mTTL)
         {
+            std::cout << ">>>> ADDRESS IN CACHE <<<<" << std::endl;
+            std::cout << ">>>> " << lIter->second->mTTL - time(NULL) << " seconds remaining" << std::endl;
             return lIter->second->mString;
         }
         else
         {
+            //mAddressCache.erase(lIter);
+            std::cout << ">>>> TTL EXPIRED <<<<" << std::endl;
             throw TTLExpiredException("The TTL has expired for item: " + aName);
         }
     }
@@ -203,6 +208,7 @@ std::string & DNSCache::GetAlias(const std::string & aAlias) const
     StringMap_t::const_iterator lIter = mAliasCache.find(aAlias);
     if(lIter == mAliasCache.end())
     {
+        std::cout << ">>>> ALIAS NOT IN CACHE <<<<" << std::endl;
         throw GeneralException("Item not in alias cache: " + aAlias);
     }
     else
@@ -211,10 +217,14 @@ std::string & DNSCache::GetAlias(const std::string & aAlias) const
         //to or greater than now.
         if(time(NULL) <= lIter->second->mTTL)
         {
+            std::cout << ">>>> ALIAS IN CACHE <<<<" << std::endl;
+            std::cout << ">>>> " << lIter->second->mTTL - time(NULL) << " seconds remaining" << std::endl;
             return lIter->second->mString;
         }
         else
         {
+            //mAliasCache.erase(lIter);
+            std::cout << ">>>> TTL EXPIRED <<<<" << std::endl;
             throw TTLExpiredException("The TTL has expired for item: " + aAlias);
         }
     }
@@ -223,12 +233,57 @@ std::string & DNSCache::GetAlias(const std::string & aAlias) const
 void DNSCache::Print(void)
 {
     std::cout << "===========CACHE===========" << std::endl;
-    PacketMap_t::const_iterator it;
-    for (it = mPacketCache.begin(); it != mPacketCache.end(); ) {
+    for (PacketMap_t::const_iterator it = mPacketCache.begin(); it != mPacketCache.end(); ) {
         std::cout << " --> Domain: " << it->first << std::endl;
-        std::cout << " --> TTL: " << it->second->mTTL << std::endl;
+        std::cout << " --> TTL: ";
+
+        if(it->second->mTTL < time(NULL)) {
+            std::cout << "Expired" << std::endl;
+        } else {
+            std::cout << it->second->mTTL << std::endl;
+        }
 
         if(++it != mPacketCache.end()) {
+            std::cout << std::endl;
+        }
+    }
+    std::cout << "===========================" << std::endl;
+
+    std::cout << std::endl;
+
+    std::cout << "====== ADDRESS CACHE ======" << std::endl;
+    for (StringMap_t::const_iterator it = mAddressCache.begin(); it != mAddressCache.end(); ) {
+        std::cout << " --> Name Server: " << it->first << std::endl;
+        std::cout << " --> Address: " << it->second->mString << std::endl;
+        std::cout << " --> TTL: ";
+
+        if(it->second->mTTL < time(NULL)) {
+            std::cout << "Expired" << std::endl;
+        } else {
+            std::cout << it->second->mTTL << std::endl;
+        }
+
+        if(++it != mAddressCache.end()) {
+            std::cout << std::endl;
+        }
+    }
+    std::cout << "===========================" << std::endl;
+
+    std::cout << std::endl;
+
+    std::cout << "======= ALIAS CACHE =======" << std::endl;
+    for (StringMap_t::const_iterator it = mAliasCache.begin(); it != mAliasCache.end(); ) {
+        std::cout << " --> Domain: " << it->first << std::endl;
+        std::cout << " --> Alias: " << it->second->mString << std::endl;
+        std::cout << " --> TTL: ";
+
+        if(it->second->mTTL < time(NULL)) {
+            std::cout << "Expired" << std::endl;
+        } else {
+            std::cout << it->second->mTTL << std::endl;
+        }
+
+        if(++it != mAliasCache.end()) {
             std::cout << std::endl;
         }
     }

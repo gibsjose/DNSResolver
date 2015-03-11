@@ -59,6 +59,8 @@ int main(int argc, char * argv[]) {
             flag = 0;
         }
 
+        std::cout << request.GetDomain() << std::endl;
+
         while(true) {
             //Create the server socket based on the configuration (starts at ROOT)
             try {
@@ -68,9 +70,6 @@ int main(int argc, char * argv[]) {
                 std::cerr << e.what() << std::endl;
                 exit(-1);
             }
-
-            // std::cout << "RESPONSE FROM SERVER:\n------------------------\n" << std::endl;
-            // response.Print();
 
             //Answer received
             if(response.GetAnswerCount()) {
@@ -111,14 +110,13 @@ int main(int argc, char * argv[]) {
                     if(response.GetAnswerSection().at(i).GetType() == TYPE_CNAME) {
                         //Update the request to use the true name (CNAME)
                         const char * lRecordData = response.GetAnswerSection().at(i).GetRecordData();
-                        // std::string lCNameString(response.GetAnswerSection().at(i).GetRecordData(),
-                        //                          response.GetAnswerSection().at(i).GetRecordDataLength());
-                        // lCNameString.erase(lCNameString.size() - 1);
                         std::string lCNameString = Record::DecodeString(lRecordData, &lRecordData);
-                        std::cout << "CNAME: " << lCNameString << std::endl;
+                        std::cout << lCNameString << " (CNAME)" << std::endl;
                         request = DNSPacket(lCNameString, request.GetID());
 
-                        //@TODO Add to cache
+                        //Add CNAME to cache
+                        cache.AddAlias(response.GetDomain(), lCNameString, time(NULL) + response.GetAnswerSection().at(i).GetTTL());
+
                         break;
                     }
                 }
@@ -127,8 +125,7 @@ int main(int argc, char * argv[]) {
             //No answer: send to the next server up
             //Send to a new server (name server/new root)
             try {
-                //@TODO Add to cache
-                resolver.UpdateServer(response);
+                resolver.UpdateServer(response, cache);
             } catch(const Exception &e) {
                 //Send response back to client
                 std::cerr << e.what() << std::endl;
@@ -323,7 +320,7 @@ void DNSResolver::SendClientResponse(DNSPacket & response) {
     }
 }
 
-void DNSResolver::UpdateServer(DNSPacket & response) {
+void DNSResolver::UpdateServer(DNSPacket & response, DNSCache & cache) {
 
     //Check for name servers
     if(response.GetNameServerCount()) {
@@ -353,6 +350,8 @@ void DNSResolver::UpdateServer(DNSPacket & response) {
             }
 
             if(!address.empty()) {
+                //Add to address cache
+                cache.AddAddress(nameServer, address, time(NULL) + response.GetNameServerSection().at(i).GetTTL());
                 serverIP = address;
                 break;
             }
