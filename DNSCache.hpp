@@ -46,8 +46,8 @@ public:
 
     //Get the raw cached packet
     DNSPacket * GetPacket(const std::string &);
-    std::string & GetAddress(const std::string & ) const;
-    std::string & GetAlias(const std::string & ) const;
+    std::string & GetAddress(const std::string & );
+    std::string & GetAlias(const std::string & );
 
     void Print(void);
 private:

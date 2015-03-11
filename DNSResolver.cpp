@@ -1,6 +1,5 @@
 #include "DNSResolver.h"
 
-
 int main(int argc, char * argv[]) {
     DNSResolver resolver;
     DNSCache cache;
@@ -39,10 +38,6 @@ int main(int argc, char * argv[]) {
             std::cerr << "Error: " << e.what() << std::endl;
             continue;
         }
-
-        //DEBUG
-        // std::cout << "Request:\n-----------------------\n" << std::endl;
-        // request.Print();
 
         //Response packet
         DNSPacket response((std::string()));

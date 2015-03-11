@@ -176,7 +176,7 @@ DNSPacket * DNSCache::GetPacket(const std::string & aDomain)
     }
 }
 
-std::string & DNSCache::GetAddress(const std::string & aName) const
+std::string & DNSCache::GetAddress(const std::string & aName)
 {
     StringMap_t::const_iterator lIter = mAddressCache.find(aName);
     if(lIter == mAddressCache.end())
@@ -196,14 +196,14 @@ std::string & DNSCache::GetAddress(const std::string & aName) const
         }
         else
         {
-            //mAddressCache.erase(lIter);
+            mAddressCache.erase(lIter);
             std::cout << ">>>> TTL EXPIRED <<<<" << std::endl;
             throw TTLExpiredException("The TTL has expired for item: " + aName);
         }
     }
 }
 
-std::string & DNSCache::GetAlias(const std::string & aAlias) const
+std::string & DNSCache::GetAlias(const std::string & aAlias)
 {
     StringMap_t::const_iterator lIter = mAliasCache.find(aAlias);
     if(lIter == mAliasCache.end())
@@ -223,7 +223,7 @@ std::string & DNSCache::GetAlias(const std::string & aAlias) const
         }
         else
         {
-            //mAliasCache.erase(lIter);
+            mAliasCache.erase(lIter);
             std::cout << ">>>> TTL EXPIRED <<<<" << std::endl;
             throw TTLExpiredException("The TTL has expired for item: " + aAlias);
         }
